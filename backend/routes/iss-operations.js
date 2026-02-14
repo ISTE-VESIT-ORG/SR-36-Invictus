@@ -125,6 +125,53 @@ router.get('/', async (req, res) => {
                 stale: true,
             });
         }
+
+        // Fallback sample data when API is unavailable and cache is empty
+        const now = new Date();
+        const fallbackIss = [
+            {
+                id: 'demo-iss-1',
+                name: 'Demo ISS Operation: EVA Prep',
+                type: 'iss',
+                subtype: 'operation',
+                date: now.toISOString(),
+                peakTime: now.toISOString(),
+                duration: 120,
+                visibility: {
+                    location: 'International Space Station',
+                    coordinates: { lat: 0, lng: 0 },
+                    bestViewTime: now.toISOString(),
+                    direction: randomDirection(),
+                    visibilityScore: 90,
+                },
+                description: {
+                    simple: 'Demo ISS operation data (API unavailable).',
+                    detailed: 'This is sample data shown when the Space Devs API cannot be reached.',
+                },
+                whyItMatters: 'ISS operations are critical for maintaining the space station and conducting research in orbit.',
+                observationTips: [
+                    'Follow official NASA/ESA updates.',
+                    'Watch live ISS streams for activities.',
+                    'ISS orbits Earth every 90 minutes.',
+                ],
+                weatherDependent: false,
+                images: [],
+                agency: 'NASA/ESA',
+                sourceUrl: 'https://www.nasa.gov',
+            },
+        ];
+
+        issCache.data = fallbackIss;
+        issCache.timestamp = Date.now();
+
+        return res.json({
+            success: true,
+            count: fallbackIss.length,
+            data: fallbackIss,
+            cached: true,
+            stale: true,
+            fallback: true,
+        });
         
         res.status(500).json({
             success: false,
@@ -139,8 +186,8 @@ router.get('/:id', async (req, res) => {
     try {
         const { id } = req.params;
         
-        // First check if operation is in cache
-        if (isCacheValid() && issCache.data) {
+        // First check if operation is in cache (even if stale)
+        if (issCache.data) {
             const cachedOp = issCache.data.find(op => op.id === id);
             if (cachedOp) {
                 console.log(`✅ Serving ISS operation ${id} from cache`);
@@ -148,6 +195,7 @@ router.get('/:id', async (req, res) => {
                     success: true,
                     data: cachedOp,
                     cached: true,
+                    stale: !isCacheValid(),
                 });
             }
         }
@@ -212,6 +260,20 @@ router.get('/:id', async (req, res) => {
         
     } catch (error) {
         console.error('Error fetching ISS operation:', error);
+        
+        // If API fails but we have cached data, serve it anyway
+        if (issCache.data) {
+            const cachedOp = issCache.data.find(op => op.id === req.params.id);
+            if (cachedOp) {
+                console.log('⚠️ API failed, serving stale cache');
+                return res.json({
+                    success: true,
+                    data: cachedOp,
+                    cached: true,
+                    stale: true,
+                });
+            }
+        }
         res.status(500).json({
             success: false,
             error: 'Failed to fetch ISS operation',

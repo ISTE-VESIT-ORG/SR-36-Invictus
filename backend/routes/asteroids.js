@@ -62,7 +62,13 @@ router.get('/', async (req, res) => {
         const response = await fetch(url);
         
         if (!response.ok) {
-            throw new Error('Failed to fetch asteroids from NASA NEO API');
+            const errorText = await response.text().catch(() => '');
+            console.error('NASA NEO API error:', {
+                status: response.status,
+                statusText: response.statusText,
+                body: errorText,
+            });
+            throw new Error(`Failed to fetch asteroids from NASA NEO API (${response.status})`);
         }
         
         const data = await response.json();
@@ -141,6 +147,56 @@ router.get('/', async (req, res) => {
                 stale: true,
             });
         }
+
+        // Fallback sample data when API is unavailable and cache is empty
+        const now = new Date();
+        const fallbackAsteroids = [
+            {
+                id: 'demo-asteroid-1',
+                name: 'Demo Asteroid 2026 AB',
+                type: 'asteroid',
+                subtype: 'flyby',
+                date: now.toISOString(),
+                peakTime: now.toISOString(),
+                duration: 120,
+                visibility: {
+                    location: 'Near Earth',
+                    coordinates: { lat: 0, lng: 0 },
+                    bestViewTime: now.toISOString(),
+                    direction: randomDirection(),
+                    visibilityScore: 60,
+                },
+                description: {
+                    simple: 'Demo asteroid data (API unavailable).',
+                    detailed: 'This is sample data shown when the NASA NEO API cannot be reached.',
+                },
+                whyItMatters: 'Tracking asteroid flybys helps us understand potential threats and study solar system composition.',
+                observationTips: [
+                    'Most asteroids require a telescope to view.',
+                    'Check brightness magnitude for visibility.',
+                    'Use astronomy software for precise location.',
+                ],
+                weatherDependent: true,
+                images: [],
+                agency: 'NASA JPL',
+                diameter: 0.25,
+                hazardous: false,
+                missDistance: 1200000,
+                sourceUrl: 'https://cneos.jpl.nasa.gov',
+            },
+        ];
+
+        asteroidsCache.data = fallbackAsteroids;
+        asteroidsCache.timestamp = Date.now();
+
+        return res.json({
+            success: true,
+            count: fallbackAsteroids.length,
+            data: fallbackAsteroids,
+            cached: true,
+            stale: true,
+            fallback: true,
+        });
         
         res.status(500).json({
             success: false,
@@ -155,8 +211,8 @@ router.get('/:id', async (req, res) => {
     try {
         const { id } = req.params;
         
-        // First check if asteroid is in cache
-        if (isCacheValid() && asteroidsCache.data) {
+        // First check if asteroid is in cache (even if stale)
+        if (asteroidsCache.data) {
             const cachedAsteroid = asteroidsCache.data.find(a => a.id === id);
             if (cachedAsteroid) {
                 console.log(`✅ Serving asteroid ${id} from cache`);
@@ -164,6 +220,7 @@ router.get('/:id', async (req, res) => {
                     success: true,
                     data: cachedAsteroid,
                     cached: true,
+                    stale: !isCacheValid(),
                 });
             }
         }
@@ -176,7 +233,13 @@ router.get('/:id', async (req, res) => {
         const response = await fetch(url);
         
         if (!response.ok) {
-            throw new Error('Failed to fetch asteroids');
+            const errorText = await response.text().catch(() => '');
+            console.error('NASA NEO API error:', {
+                status: response.status,
+                statusText: response.statusText,
+                body: errorText,
+            });
+            throw new Error(`Failed to fetch asteroids (${response.status})`);
         }
         
         const data = await response.json();
@@ -241,6 +304,20 @@ router.get('/:id', async (req, res) => {
         
     } catch (error) {
         console.error('Error fetching asteroid:', error);
+        
+        // If API fails but we have cached data, serve it anyway
+        if (asteroidsCache.data) {
+            const cachedAsteroid = asteroidsCache.data.find(a => a.id === req.params.id);
+            if (cachedAsteroid) {
+                console.log('⚠️ API failed, serving stale cache');
+                return res.json({
+                    success: true,
+                    data: cachedAsteroid,
+                    cached: true,
+                    stale: true,
+                });
+            }
+        }
         res.status(500).json({
             success: false,
             error: 'Failed to fetch asteroid',

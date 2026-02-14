@@ -114,6 +114,55 @@ router.get('/', async (req, res) => {
                 stale: true,
             });
         }
+
+        // Fallback sample data when API is unavailable and cache is empty
+        const now = new Date();
+        const fallbackLaunches = [
+            {
+                id: 'demo-launch-1',
+                name: 'Demo Launch: Artemis Test Flight',
+                type: 'launch',
+                subtype: 'rocket_launch',
+                date: now.toISOString(),
+                peakTime: now.toISOString(),
+                duration: 30,
+                visibility: {
+                    location: 'Kennedy Space Center, FL',
+                    coordinates: { lat: 28.5729, lng: -80.6490 },
+                    bestViewTime: now.toISOString(),
+                    direction: randomDirection(),
+                    visibilityScore: 85,
+                },
+                description: {
+                    simple: 'Demo launch data (API unavailable).',
+                    detailed: 'This is sample data shown when the Space Devs API cannot be reached.',
+                },
+                whyItMatters: 'Space launches are crucial for satellite deployment, space exploration, and scientific missions.',
+                observationTips: [
+                    'Check official launch streams for live coverage.',
+                    'Clear weather improves visibility.',
+                    'Arrive early if viewing locally.',
+                ],
+                weatherDependent: true,
+                images: [],
+                agency: 'Demo Agency',
+                status: 'TBD',
+                pad: 'LC-39A',
+                sourceUrl: 'https://thespacedevs.com',
+            },
+        ];
+
+        launchesCache.data = fallbackLaunches;
+        launchesCache.timestamp = Date.now();
+
+        return res.json({
+            success: true,
+            count: fallbackLaunches.length,
+            data: fallbackLaunches,
+            cached: true,
+            stale: true,
+            fallback: true,
+        });
         
         res.status(500).json({
             success: false,
@@ -128,8 +177,8 @@ router.get('/:id', async (req, res) => {
     try {
         const { id } = req.params;
         
-        // First check if launch is in cache
-        if (isCacheValid() && launchesCache.data) {
+        // First check if launch is in cache (even if stale)
+        if (launchesCache.data) {
             const cachedLaunch = launchesCache.data.find(l => l.id === id);
             if (cachedLaunch) {
                 console.log(`✅ Serving launch ${id} from cache`);
@@ -137,6 +186,7 @@ router.get('/:id', async (req, res) => {
                     success: true,
                     data: cachedLaunch,
                     cached: true,
+                    stale: !isCacheValid(),
                 });
             }
         }
@@ -201,6 +251,20 @@ router.get('/:id', async (req, res) => {
         
     } catch (error) {
         console.error('Error fetching launch:', error);
+        
+        // If API fails but we have cached data, serve it anyway
+        if (launchesCache.data) {
+            const cachedLaunch = launchesCache.data.find(l => l.id === req.params.id);
+            if (cachedLaunch) {
+                console.log('⚠️ API failed, serving stale cache');
+                return res.json({
+                    success: true,
+                    data: cachedLaunch,
+                    cached: true,
+                    stale: true,
+                });
+            }
+        }
         res.status(500).json({
             success: false,
             error: 'Failed to fetch launch',
