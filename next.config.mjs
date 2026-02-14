@@ -1,6 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: 'export',
+  // Removed 'output: export' to allow dynamic server-side rendering for API calls
   images: {
     unoptimized: true,
   },
