@@ -1,10 +1,21 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Rocket, Github, Twitter } from 'lucide-react';
+import { Rocket, Github, Twitter, LogOut, User as UserIcon } from 'lucide-react';
 import Link from 'next/link';
+import { GlowingButton } from '@/components/ui/GlowingButton';
+import { useAuth } from '@/context/AuthContext';
+import { useRouter } from 'next/navigation';
 
 export function Navbar() {
+    const { user, logout } = useAuth();
+    const router = useRouter();
+
+    const handleLogout = async () => {
+        await logout();
+        router.push('/');
+    };
+
     return (
         <motion.nav
             initial={{ y: -100 }}
@@ -27,31 +38,48 @@ export function Navbar() {
                     </Link>
 
                     {/* Navigation Links */}
-                    <div className="hidden md:flex items-center gap-8">
-                        <Link href="/events" className="text-space-gray-300 hover:text-star-white transition-colors">
-                            Events
-                        </Link>
-                        <Link href="/missions" className="text-space-gray-300 hover:text-star-white transition-colors">
-                            Missions
-                        </Link>
-                        <Link href="/impact" className="text-space-gray-300 hover:text-star-white transition-colors">
-                            Impact
-                        </Link>
-                        <Link href="/learn" className="text-space-gray-300 hover:text-star-white transition-colors">
-                            Learn
-                        </Link>
-                    </div>
+                    {user && (
+                        <div className="hidden md:flex items-center gap-8">
+                            <Link href="/events" className="text-space-gray-300 hover:text-star-white transition-colors">
+                                Events
+                            </Link>
+                            <Link href="/missions" className="text-space-gray-300 hover:text-star-white transition-colors">
+                                Missions
+                            </Link>
+                            <Link href="/impact" className="text-space-gray-300 hover:text-star-white transition-colors">
+                                Impact
+                            </Link>
+                            <Link href="/learn" className="text-space-gray-300 hover:text-star-white transition-colors">
+                                Learn
+                            </Link>
+                        </div>
+                    )}
 
-                    {/* CTA Button */}
-                    <Link href="/login">
-                        <motion.button
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                            className="px-6 py-2 bg-cosmic-purple hover:bg-cosmic-purple/80 text-white rounded-full font-semibold transition-colors"
+                    {/* CTA Button or User Profile */}
+                    {user ? (
+                        <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-2 text-sm text-star-white font-medium">
+                                <div className="w-8 h-8 rounded-full bg-cosmic-purple/20 flex items-center justify-center border border-cosmic-purple/50">
+                                    <UserIcon className="w-4 h-4 text-cosmic-purple" />
+                                </div>
+                                <span className="hidden sm:inline">{user.displayName || 'Explorer'}</span>
+                            </div>
+                            <button
+                                onClick={handleLogout}
+                                className="p-2 hover:bg-white/10 rounded-full transition-colors text-space-gray-400 hover:text-white"
+                                title="Sign Out"
+                            >
+                                <LogOut className="w-5 h-5" />
+                            </button>
+                        </div>
+                    ) : (
+                        <GlowingButton
+                            onClick={() => router.push('/login')}
+                            className="text-sm px-6 py-2"
                         >
                             Get Started
-                        </motion.button>
-                    </Link>
+                        </GlowingButton>
+                    )}
                 </div>
             </div>
         </motion.nav>

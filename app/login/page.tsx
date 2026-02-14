@@ -1,18 +1,55 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Rocket, Mail, Lock, User, ArrowRight, Github, Twitter } from 'lucide-react';
+import { Rocket, Mail, Lock, User, ArrowRight, Github, Twitter, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
+import { useAuth } from '@/context/AuthContext';
+import { useRouter } from 'next/navigation';
+import { Starfield } from '@/components/ui/Starfield';
 
 export default function LoginPage() {
     const [isLogin, setIsLogin] = useState(true);
+    const { signIn, signUp } = useAuth();
+    const router = useRouter();
+
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [name, setName] = useState('');
+    const [error, setError] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
+
+    // Prefetch portions of the app for faster transitions
+    useEffect(() => {
+        router.prefetch('/events');
+    }, [router]);
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setError('');
+        setIsLoading(true);
+
+        try {
+            if (isLogin) {
+                await signIn(email, password);
+            } else {
+                await signUp(email, password, name);
+            }
+            // Use client-side navigation for instant transition
+            router.push('/events');
+        } catch (err: any) {
+            setError(err.message.replace('Firebase: ', ''));
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     return (
         <div className="min-h-screen bg-space-black flex items-center justify-center p-4 relative overflow-hidden">
             {/* Background Animation */}
+            {/* Background Animation */}
             <div className="absolute inset-0 z-0">
-                <div className="absolute inset-0 bg-[url('/images/stars-bg.png')] opacity-50 animate-pulse" />
+                <Starfield density="medium" className="opacity-50" />
                 <div className="absolute w-full h-full bg-gradient-to-br from-space-black via-space-gray-900 to-black opacity-90" />
 
                 {/* Animated Orbs */}
@@ -51,7 +88,14 @@ export default function LoginPage() {
                         </p>
                     </div>
 
-                    <form className="space-y-4">
+                    <form onSubmit={handleSubmit} className="space-y-4">
+                        {error && (
+                            <div className="bg-red-500/10 border border-red-500/50 rounded-lg p-3 flex items-start gap-2 text-red-200 text-sm">
+                                <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+                                <span>{error}</span>
+                            </div>
+                        )}
+
                         <AnimatePresence mode="wait">
                             {!isLogin && (
                                 <motion.div
@@ -66,6 +110,9 @@ export default function LoginPage() {
                                             <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-space-gray-500" />
                                             <input
                                                 type="text"
+                                                required={!isLogin}
+                                                value={name}
+                                                onChange={(e) => setName(e.target.value)}
                                                 placeholder="John Doe"
                                                 className="w-full bg-space-black/50 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white placeholder:text-space-gray-600 focus:outline-none focus:border-cosmic-purple focus:ring-1 focus:ring-cosmic-purple transition-all"
                                             />
@@ -81,6 +128,9 @@ export default function LoginPage() {
                                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-space-gray-500" />
                                 <input
                                     type="email"
+                                    required
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
                                     placeholder="name@example.com"
                                     className="w-full bg-space-black/50 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white placeholder:text-space-gray-600 focus:outline-none focus:border-cosmic-purple focus:ring-1 focus:ring-cosmic-purple transition-all"
                                 />
@@ -93,6 +143,9 @@ export default function LoginPage() {
                                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-space-gray-500" />
                                 <input
                                     type="password"
+                                    required
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
                                     placeholder="••••••••"
                                     className="w-full bg-space-black/50 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white placeholder:text-space-gray-600 focus:outline-none focus:border-cosmic-purple focus:ring-1 focus:ring-cosmic-purple transition-all"
                                 />
@@ -107,9 +160,19 @@ export default function LoginPage() {
                             </div>
                         )}
 
-                        <button className="w-full py-3 bg-gradient-to-r from-cosmic-purple to-nebula-pink text-white rounded-xl font-bold shadow-lg shadow-cosmic-purple/25 hover:shadow-cosmic-purple/40 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 group">
-                            {isLogin ? 'Sign In' : 'Create Account'}
-                            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                        <button
+                            type="submit"
+                            disabled={isLoading}
+                            className="w-full py-3 bg-gradient-to-r from-cosmic-purple to-nebula-pink text-white rounded-xl font-bold shadow-lg shadow-cosmic-purple/25 hover:shadow-cosmic-purple/40 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 group disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            {isLoading ? (
+                                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                            ) : (
+                                <>
+                                    {isLogin ? 'Sign In' : 'Create Account'}
+                                    <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                                </>
+                            )}
                         </button>
                     </form>
 

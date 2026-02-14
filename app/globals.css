@@ -51,4 +51,23 @@
         transparent 100%);
     background-size: 1000px 100%;
   }
+
+  @keyframes gradient-move {
+    0% {
+      background-position: 0% 50%;
+    }
+
+    50% {
+      background-position: 100% 50%;
+    }
+
+    100% {
+      background-position: 0% 50%;
+    }
+  }
+
+  .animate-gradient-text {
+    background-size: 200% auto;
+    animation: gradient-move 4s linear infinite;
+  }
 }
