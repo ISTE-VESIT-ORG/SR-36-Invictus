@@ -1,0 +1,181 @@
+import Image from 'next/image';
+import { BookOpen, Video, Award, Users } from 'lucide-react';
+
+export default function LearnPage() {
+    const learningModules = [
+        {
+            title: 'Solar System Basics',
+            icon: '🪐',
+            level: 'Beginner',
+            duration: '30 min',
+            topics: ['Planets', 'Moons', 'Asteroids', 'Comets'],
+            description: 'Explore our cosmic neighborhood and learn about each planet.',
+        },
+        {
+            title: 'Satellite Technology',
+            icon: '🛰️',
+            level: 'Intermediate',
+            duration: '45 min',
+            topics: ['Orbits', 'Communication', 'GPS', 'Imaging'],
+            description: 'Understand how satellites work and their applications.',
+        },
+        {
+            title: 'Space Exploration History',
+            icon: '🚀',
+            level: 'Beginner',
+            duration: '1 hour',
+            topics: ['Apollo', 'ISS', 'Mars Rovers', 'Future Missions'],
+            description: 'Journey through humanity\'s greatest space achievements.',
+        },
+        {
+            title: 'Astrophysics Fundamentals',
+            icon: '⭐',
+            level: 'Advanced',
+            duration: '2 hours',
+            topics: ['Stars', 'Galaxies', 'Black Holes', 'Dark Matter'],
+            description: 'Dive deep into the physics of the universe.',
+        },
+    ];
+
+    return (
+        <div className="min-h-screen bg-space-black pt-24 pb-16">
+            {/* Background Image */}
+            <div className="absolute inset-0 z-0">
+                <Image
+                    src="/images/solar-system.png"
+                    alt="Solar system"
+                    fill
+                    className="object-cover opacity-20"
+                    quality={85}
+                />
+                <div className="absolute inset-0 bg-gradient-to-b from-space-black via-space-black/80 to-space-black" />
+            </div>
+
+            <div className="max-w-7xl mx-auto px-8 relative z-10">
+                <div className="text-center mb-12">
+                    <h1 className="text-5xl md:text-6xl font-bold text-star-white font-display mb-4">
+                        Learn About Space
+                    </h1>
+                    <p className="text-xl text-space-gray-300 max-w-2xl mx-auto">
+                        Interactive lessons, 3D visualizations, and educational content for all ages.
+                    </p>
+                </div>
+
+                {/* Learning Paths */}
+                <div className="grid md:grid-cols-4 gap-4 mb-12">
+                    <div className="bg-cosmic-purple/10 border border-cosmic-purple/30 rounded-xl p-4 text-center">
+                        <BookOpen className="w-8 h-8 text-cosmic-purple mx-auto mb-2" />
+                        <div className="text-2xl font-bold text-star-white mb-1">150+</div>
+                        <div className="text-sm text-space-gray-400">Lessons</div>
+                    </div>
+                    <div className="bg-galaxy-cyan/10 border border-galaxy-cyan/30 rounded-xl p-4 text-center">
+                        <Video className="w-8 h-8 text-galaxy-cyan mx-auto mb-2" />
+                        <div className="text-2xl font-bold text-star-white mb-1">50+</div>
+                        <div className="text-sm text-space-gray-400">Videos</div>
+                    </div>
+                    <div className="bg-aurora-green/10 border border-aurora-green/30 rounded-xl p-4 text-center">
+                        <Award className="w-8 h-8 text-aurora-green mx-auto mb-2" />
+                        <div className="text-2xl font-bold text-star-white mb-1">25</div>
+                        <div className="text-sm text-space-gray-400">Certificates</div>
+                    </div>
+                    <div className="bg-nebula-pink/10 border border-nebula-pink/30 rounded-xl p-4 text-center">
+                        <Users className="w-8 h-8 text-nebula-pink mx-auto mb-2" />
+                        <div className="text-2xl font-bold text-star-white mb-1">10K+</div>
+                        <div className="text-sm text-space-gray-400">Students</div>
+                    </div>
+                </div>
+
+                {/* Learning Modules */}
+                <div className="grid md:grid-cols-2 gap-6 mb-12">
+                    {learningModules.map((module, i) => (
+                        <div
+                            key={i}
+                            className="bg-space-gray-900/80 backdrop-blur-sm border border-space-gray-700 hover:border-cosmic-purple/50 rounded-2xl p-6 transition-all duration-300"
+                        >
+                            <div className="flex items-start justify-between mb-4">
+                                <div>
+                                    <div className="text-5xl mb-3">{module.icon}</div>
+                                    <h3 className="text-2xl font-bold text-star-white font-display mb-2">
+                                        {module.title}
+                                    </h3>
+                                    <div className="flex gap-2">
+                                        <span className="px-3 py-1 bg-cosmic-purple/20 text-cosmic-purple rounded-full text-xs font-semibold">
+                                            {module.level}
+                                        </span>
+                                        <span className="px-3 py-1 bg-space-gray-800 text-space-gray-300 rounded-full text-xs font-semibold">
+                                            {module.duration}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <p className="text-space-gray-300 mb-4">
+                                {module.description}
+                            </p>
+
+                            <div className="mb-4">
+                                <p className="text-xs text-space-gray-500 mb-2">Topics Covered:</p>
+                                <div className="flex flex-wrap gap-2">
+                                    {module.topics.map((topic, j) => (
+                                        <span
+                                            key={j}
+                                            className="px-2 py-1 bg-space-gray-800 text-space-gray-300 rounded text-xs"
+                                        >
+                                            {topic}
+                                        </span>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <button className="w-full py-2 px-4 bg-cosmic-purple hover:bg-cosmic-purple/90 text-white rounded-lg font-semibold text-sm transition-colors">
+                                Start Learning →
+                            </button>
+                        </div>
+                    ))}
+                </div>
+
+                {/* Interactive Tools */}
+                <div className="bg-gradient-to-br from-space-gray-900 to-space-gray-800 border border-space-gray-700 rounded-2xl p-8">
+                    <h2 className="text-3xl font-bold text-star-white font-display mb-6 text-center">
+                        Interactive Learning Tools
+                    </h2>
+
+                    <div className="grid md:grid-cols-3 gap-6">
+                        <div className="bg-space-gray-800/50 rounded-xl p-6 text-center">
+                            <div className="text-4xl mb-3">🌍</div>
+                            <h3 className="text-lg font-bold text-star-white mb-2">3D Solar System</h3>
+                            <p className="text-sm text-space-gray-400 mb-4">
+                                Explore planets in 3D with real-time positions
+                            </p>
+                            <button className="text-cosmic-purple hover:text-cosmic-purple/80 text-sm font-semibold">
+                                Launch Tool →
+                            </button>
+                        </div>
+
+                        <div className="bg-space-gray-800/50 rounded-xl p-6 text-center">
+                            <div className="text-4xl mb-3">⭐</div>
+                            <h3 className="text-lg font-bold text-star-white mb-2">Sky Map</h3>
+                            <p className="text-sm text-space-gray-400 mb-4">
+                                Identify constellations and stars in real-time
+                            </p>
+                            <button className="text-cosmic-purple hover:text-cosmic-purple/80 text-sm font-semibold">
+                                Launch Tool →
+                            </button>
+                        </div>
+
+                        <div className="bg-space-gray-800/50 rounded-xl p-6 text-center">
+                            <div className="text-4xl mb-3">🎮</div>
+                            <h3 className="text-lg font-bold text-star-white mb-2">Space Quizzes</h3>
+                            <p className="text-sm text-space-gray-400 mb-4">
+                                Test your knowledge with fun quizzes
+                            </p>
+                            <button className="text-cosmic-purple hover:text-cosmic-purple/80 text-sm font-semibold">
+                                Start Quiz →
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
