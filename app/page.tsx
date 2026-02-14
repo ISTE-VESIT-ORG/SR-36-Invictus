@@ -2,6 +2,7 @@ import AnimatedHero from '@/components/hero/AnimatedHero';
 import { EventGrid } from '@/components/events/EventGrid';
 import { EnhancedStats } from '@/components/dashboard/QuickStats';
 import { sampleEvents } from '@/data/events';
+import Link from 'next/link';
 
 export default function Home() {
     return (
@@ -23,9 +24,11 @@ export default function Home() {
                         <p className="text-lg text-space-gray-300 mb-8">
                             Join thousands of space enthusiasts discovering the universe through AstroView
                         </p>
-                        <button className="px-8 py-4 bg-gradient-to-r from-cosmic-purple to-nebula-pink text-white rounded-full text-lg font-semibold shadow-2xl hover:shadow-cosmic-purple/50 transition-all">
-                            Get Started Free →
-                        </button>
+                        <Link href="/login">
+                            <button className="px-8 py-4 bg-gradient-to-r from-cosmic-purple to-nebula-pink text-white rounded-full text-lg font-semibold shadow-2xl hover:shadow-cosmic-purple/50 transition-all">
+                                Get Started Free →
+                            </button>
+                        </Link>
                     </div>
                 </div>
             </section>

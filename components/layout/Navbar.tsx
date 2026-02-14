@@ -43,13 +43,15 @@ export function Navbar() {
                     </div>
 
                     {/* CTA Button */}
-                    <motion.button
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        className="px-6 py-2 bg-cosmic-purple hover:bg-cosmic-purple/80 text-white rounded-full font-semibold transition-colors"
-                    >
-                        Get Started
-                    </motion.button>
+                    <Link href="/login">
+                        <motion.button
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                            className="px-6 py-2 bg-cosmic-purple hover:bg-cosmic-purple/80 text-white rounded-full font-semibold transition-colors"
+                        >
+                            Get Started
+                        </motion.button>
+                    </Link>
                 </div>
             </div>
         </motion.nav>
