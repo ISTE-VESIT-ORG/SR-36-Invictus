@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import { Inter, Space_Grotesk, JetBrains_Mono } from 'next/font/google';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
+import { Starfield } from '@/components/ui/Starfield';
+import { AuthProvider } from '@/context/AuthContext';
 import './globals.css';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
@@ -21,10 +23,13 @@ export default function RootLayout({
 }) {
     return (
         <html lang="en">
-            <body className={`${inter.variable} ${spaceGrotesk.variable} ${jetbrainsMono.variable}`}>
-                <Navbar />
-                {children}
-                <Footer />
+            <body className={`${inter.variable} ${spaceGrotesk.variable} ${jetbrainsMono.variable} relative`}>
+                <AuthProvider>
+                    <Starfield density="low" className="fixed inset-0 z-0" />
+                    <Navbar />
+                    {children}
+                    <Footer />
+                </AuthProvider>
             </body>
         </html>
     );

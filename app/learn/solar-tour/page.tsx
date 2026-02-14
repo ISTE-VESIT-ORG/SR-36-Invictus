@@ -173,7 +173,6 @@ export default function SolarSystemTour() {
         <div className="h-screen w-screen bg-black overflow-hidden relative font-sans text-white">
             {/* Animated Starfield Background */}
             <div className="absolute inset-0 z-0">
-                <div className="absolute inset-0 bg-[url('/images/stars-bg.png')] opacity-50 animate-pulse" /> {/* Fallback if no image */}
                 <div className="absolute w-full h-full bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-space-gray-900 via-black to-black opacity-80" />
 
                 {/* Animated Stars (CSS) */}
