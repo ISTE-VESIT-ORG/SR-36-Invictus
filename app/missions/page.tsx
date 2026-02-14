@@ -119,9 +119,9 @@ export default function MissionsPage() {
                                     <p className="text-sm text-cosmic-purple font-medium">{mission.agency}</p>
                                 </div>
                                 <span className={`px-3 py-1 rounded-full text-xs font-semibold ${mission.status === 'Active' ? 'bg-aurora-green/20 text-aurora-green' :
-                                        mission.status === 'In Progress' ? 'bg-galaxy-cyan/20 text-galaxy-cyan' :
-                                            mission.status === 'Testing' ? 'bg-meteor-orange/20 text-meteor-orange' :
-                                                'bg-nebula-pink/20 text-nebula-pink'
+                                    mission.status === 'In Progress' ? 'bg-galaxy-cyan/20 text-galaxy-cyan' :
+                                        mission.status === 'Testing' ? 'bg-meteor-orange/20 text-meteor-orange' :
+                                            'bg-nebula-pink/20 text-nebula-pink'
                                     }`}>
                                     {mission.status}
                                 </span>

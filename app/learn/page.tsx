@@ -134,6 +134,37 @@ export default function LearnPage() {
                     ))}
                 </div>
 
+                {/* Virtual Tour Banner */}
+                <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-indigo-900 to-purple-900 mb-12 border border-white/10 group">
+                    <div className="absolute inset-0 bg-[url('/images/solar-system.png')] opacity-30 bg-cover bg-center transition-transform duration-700 group-hover:scale-105" />
+                    <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent" />
+
+                    <div className="relative z-10 p-8 md:p-12 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+                        <div className="max-w-xl">
+                            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cosmic-purple/30 text-cosmic-purple text-xs font-semibold mb-4 border border-cosmic-purple/30">
+                                <span className="relative flex h-2 w-2">
+                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cosmic-purple opacity-75"></span>
+                                    <span className="relative inline-flex rounded-full h-2 w-2 bg-cosmic-purple"></span>
+                                </span>
+                                New Feature
+                            </div>
+                            <h2 className="text-3xl md:text-4xl font-bold text-white font-display mb-4">
+                                Virtual Solar System Tour
+                            </h2>
+                            <p className="text-space-gray-300 text-lg mb-0">
+                                Embark on an immersive journey through our celestial neighborhood. Explore planets, moons, and stars in a fully interactive experience.
+                            </p>
+                        </div>
+
+                        <a
+                            href="/learn/solar-tour"
+                            className="px-8 py-4 bg-white text-space-black rounded-full font-bold hover:bg-space-gray-100 transition-colors shadow-lg shadow-white/10 flex items-center gap-2 whitespace-nowrap"
+                        >
+                            Start Tour 🚀
+                        </a>
+                    </div>
+                </div>
+
                 {/* Interactive Tools */}
                 <div className="bg-gradient-to-br from-space-gray-900 to-space-gray-800 border border-space-gray-700 rounded-2xl p-8">
                     <h2 className="text-3xl font-bold text-star-white font-display mb-6 text-center">
