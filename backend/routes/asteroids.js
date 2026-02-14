@@ -7,6 +7,7 @@ const CACHE_DURATION = 60 * 60 * 1000; // 1 hour in milliseconds
 let asteroidsCache = {
     data: null,
     timestamp: null,
+    isFallback: false,
 };
 
 // NASA NEO API - Using demo key, user should update with their own
@@ -43,7 +44,7 @@ function getDateRange() {
 router.get('/', async (req, res) => {
     try {
         // Check if we have valid cached data
-        if (isCacheValid()) {
+        if (isCacheValid() && !asteroidsCache.isFallback) {
             console.log('✅ Serving asteroids from cache');
             return res.json({
                 success: true,
@@ -124,6 +125,7 @@ router.get('/', async (req, res) => {
         // Update cache
         asteroidsCache.data = asteroids.slice(0, 12); // Limit to 12 asteroids
         asteroidsCache.timestamp = Date.now();
+        asteroidsCache.isFallback = false;
         console.log(`✅ Cached ${asteroidsCache.data.length} asteroids for 1 hour`);
         
         res.json({
@@ -188,6 +190,7 @@ router.get('/', async (req, res) => {
 
         asteroidsCache.data = fallbackAsteroids;
         asteroidsCache.timestamp = Date.now();
+        asteroidsCache.isFallback = true;
 
         return res.json({
             success: true,
@@ -211,8 +214,8 @@ router.get('/:id', async (req, res) => {
     try {
         const { id } = req.params;
         
-        // First check if asteroid is in cache (even if stale)
-        if (asteroidsCache.data) {
+        // First check if asteroid is in cache (only if not fallback)
+        if (asteroidsCache.data && !asteroidsCache.isFallback) {
             const cachedAsteroid = asteroidsCache.data.find(a => a.id === id);
             if (cachedAsteroid) {
                 console.log(`✅ Serving asteroid ${id} from cache`);
@@ -331,6 +334,7 @@ router.getCache = () => asteroidsCache;
 router.clearCache = () => {
     asteroidsCache.data = null;
     asteroidsCache.timestamp = null;
+    asteroidsCache.isFallback = false;
     console.log('🗑️ Asteroids cache cleared');
 };
 

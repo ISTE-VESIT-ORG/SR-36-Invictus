@@ -6,7 +6,7 @@ const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost
 export async function fetchCelestialEvents(): Promise<CelestialEvent[]> {
     try {
         const res = await fetch(`${BACKEND_API_URL}/events`, {
-            next: { revalidate: 3600 }, // revalidate every 1 hour
+            cache: 'no-store',
         });
 
         if (!res.ok) {
@@ -39,7 +39,7 @@ export async function fetchCelestialEvents(): Promise<CelestialEvent[]> {
 export async function fetchLaunches(): Promise<CelestialEvent[]> {
     try {
         const res = await fetch(`${BACKEND_API_URL}/launches`, {
-            next: { revalidate: 3600 },
+            cache: 'no-store',
         });
 
         if (!res.ok) {
@@ -70,7 +70,7 @@ export async function fetchLaunches(): Promise<CelestialEvent[]> {
 export async function fetchISSOperations(): Promise<CelestialEvent[]> {
     try {
         const res = await fetch(`${BACKEND_API_URL}/iss-operations`, {
-            next: { revalidate: 3600 },
+            cache: 'no-store',
         });
 
         if (!res.ok) {
@@ -101,7 +101,7 @@ export async function fetchISSOperations(): Promise<CelestialEvent[]> {
 export async function fetchAsteroids(): Promise<CelestialEvent[]> {
     try {
         const res = await fetch(`${BACKEND_API_URL}/asteroids`, {
-            next: { revalidate: 3600 },
+            cache: 'no-store',
         });
 
         if (!res.ok) {
