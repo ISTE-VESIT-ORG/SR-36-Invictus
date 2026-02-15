@@ -9,6 +9,7 @@ const CACHE_DURATION = 60 * 60 * 1000; // 1 hour in milliseconds
 let launchesCache = {
     data: null,
     timestamp: null,
+    fetchHistory: [], // Store last 5 fetch timestamps
 };
 
 // Helper function to check if cache is valid
@@ -38,6 +39,13 @@ router.get('/', async (req, res) => {
                 data: launchesCache.data,
                 cached: true,
                 cacheAge: Math.floor((Date.now() - launchesCache.timestamp) / 1000 / 60),
+                metadata: {
+                    apiSource: 'The Space Devs API - Launches',
+                    apiEndpoint: `${API_URL}/launch/upcoming/`,
+                    lastFetched: new Date(launchesCache.timestamp).toISOString(),
+                    fetchedAt: launchesCache.timestamp,
+                    fetchHistory: launchesCache.fetchHistory,
+                }
             });
         }
 
@@ -45,6 +53,7 @@ router.get('/', async (req, res) => {
         const response = await fetch(`${API_URL}/launch/upcoming/`);
         
         if (!response.ok) {
+            console.error(`❌ Space Devs API returned status: ${response.status} ${response.statusText}`);
             throw new Error('Failed to fetch launches from Space Devs API');
         }
         
@@ -91,6 +100,16 @@ router.get('/', async (req, res) => {
         // Update cache
         launchesCache.data = launches;
         launchesCache.timestamp = Date.now();
+        
+        // Add to fetch history (keep last 5)
+        launchesCache.fetchHistory.unshift({
+            timestamp: launchesCache.timestamp,
+            date: new Date().toISOString(),
+        });
+        if (launchesCache.fetchHistory.length > 5) {
+            launchesCache.fetchHistory = launchesCache.fetchHistory.slice(0, 5);
+        }
+        
         console.log(`✅ Cached ${launches.length} launches for 1 hour`);
         
         res.json({
@@ -98,6 +117,13 @@ router.get('/', async (req, res) => {
             count: launches.length,
             data: launches,
             cached: false,
+            metadata: {
+                apiSource: 'The Space Devs API - Launches',
+                apiEndpoint: `${API_URL}/launch/upcoming/`,
+                lastFetched: new Date().toISOString(),
+                fetchedAt: Date.now(),
+                fetchHistory: launchesCache.fetchHistory,
+            }
         });
         
     } catch (error) {

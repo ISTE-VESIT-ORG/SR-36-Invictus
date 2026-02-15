@@ -9,6 +9,7 @@ const CACHE_DURATION = 60 * 60 * 1000; // 1 hour in milliseconds
 let issCache = {
     data: null,
     timestamp: null,
+    fetchHistory: [], // Store last 5 fetch timestamps
 };
 
 // Helper function to check if cache is valid
@@ -48,6 +49,13 @@ router.get('/', async (req, res) => {
                 data: issCache.data,
                 cached: true,
                 cacheAge: Math.floor((Date.now() - issCache.timestamp) / 1000 / 60),
+                metadata: {
+                    apiSource: 'The Space Devs API - ISS Events',
+                    apiEndpoint: `${API_URL}/event/upcoming/`,
+                    lastFetched: new Date(issCache.timestamp).toISOString(),
+                    fetchedAt: issCache.timestamp,
+                    fetchHistory: issCache.fetchHistory,
+                }
             });
         }
 
@@ -55,6 +63,7 @@ router.get('/', async (req, res) => {
         const response = await fetch(`${API_URL}/event/upcoming/`);
         
         if (!response.ok) {
+            console.error(`❌ Space Devs API returned status: ${response.status} ${response.statusText}`);
             throw new Error('Failed to fetch ISS operations from Space Devs API');
         }
         
@@ -102,6 +111,16 @@ router.get('/', async (req, res) => {
         // Update cache
         issCache.data = issEvents;
         issCache.timestamp = Date.now();
+        
+        // Add to fetch history (keep last 5)
+        issCache.fetchHistory.unshift({
+            timestamp: issCache.timestamp,
+            date: new Date().toISOString(),
+        });
+        if (issCache.fetchHistory.length > 5) {
+            issCache.fetchHistory = issCache.fetchHistory.slice(0, 5);
+        }
+        
         console.log(`✅ Cached ${issEvents.length} ISS operations for 1 hour`);
         
         res.json({
@@ -109,6 +128,13 @@ router.get('/', async (req, res) => {
             count: issEvents.length,
             data: issEvents,
             cached: false,
+            metadata: {
+                apiSource: 'The Space Devs API - ISS Events',
+                apiEndpoint: `${API_URL}/event/upcoming/`,
+                lastFetched: new Date().toISOString(),
+                fetchedAt: Date.now(),
+                fetchHistory: issCache.fetchHistory,
+            }
         });
         
     } catch (error) {

@@ -1,20 +1,24 @@
 import { EventGrid } from '@/components/events/EventGrid';
 import {
     fetchAsteroids,
+    fetchAuroraEvents,
     fetchCelestialEvents,
     fetchISSOperations,
     fetchLaunches,
+    fetchSolarFlares,
 } from '@/lib/fetchCelestialEvents';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 export default async function EventsPage() {
-    const [celestialEvents, launches, issOperations, asteroids] = await Promise.all([
+    const [celestialEvents, launches, issOperations, asteroids, auroraEvents, solarFlares] = await Promise.all([
         fetchCelestialEvents(),
         fetchLaunches(),
         fetchISSOperations(),
         fetchAsteroids(),
+        fetchAuroraEvents(),
+        fetchSolarFlares(),
     ]);
 
     return (
@@ -56,11 +60,31 @@ export default async function EventsPage() {
                     />
                 )}
 
+                {/* Aurora Events Section */}
+                {auroraEvents.length > 0 && (
+                    <EventGrid
+                        title="🌌 Aurora Events"
+                        events={auroraEvents}
+                        eventType="aurora"
+                    />
+                )}
+
+                {/* Space Weather Events Section */}
+                {solarFlares.length > 0 && (
+                    <EventGrid
+                        title="🌞 Space Weather Events"
+                        events={solarFlares}
+                        eventType="solar-flare"
+                    />
+                )}
+
                 {/* Loading fallback */}
                 {celestialEvents.length === 0 &&
                     launches.length === 0 &&
                     issOperations.length === 0 &&
-                    asteroids.length === 0 && (
+                    asteroids.length === 0 &&
+                    auroraEvents.length === 0 &&
+                    solarFlares.length === 0 && (
                         <div className="py-20 px-8">
                             <div className="max-w-4xl mx-auto text-center">
                                 <p className="text-xl text-space-gray-300 mb-4">🚀 Loading events...</p>

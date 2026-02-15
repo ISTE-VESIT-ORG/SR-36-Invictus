@@ -22,6 +22,8 @@ export function EventGrid({ events, title = 'Upcoming Celestial Events', eventTy
                         {eventType === 'launch' && 'Watch upcoming rocket launches from around the world.'}
                         {eventType === 'iss' && 'Track International Space Station operations and activities.'}
                         {eventType === 'asteroid' && 'Monitor near-Earth asteroid flybys and close approaches.'}
+                        {eventType === 'aurora' && 'Real-time aurora activity tracking based on solar storm intensity (KP Index).'}
+                        {eventType === 'solar-flare' && 'Monitor solar flares and space weather events that may impact Earth.'}
                     </p>
                 </div>
 

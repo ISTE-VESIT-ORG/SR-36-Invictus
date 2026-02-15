@@ -9,6 +9,7 @@ const CACHE_DURATION = 60 * 60 * 1000; // 1 hour in milliseconds
 let eventsCache = {
     data: null,
     timestamp: null,
+    fetchHistory: [], // Store last 5 fetch timestamps
 };
 
 // Helper function to check if cache is valid
@@ -54,6 +55,13 @@ router.get('/', async (req, res) => {
                 data: eventsCache.data,
                 cached: true,
                 cacheAge: Math.floor((Date.now() - eventsCache.timestamp) / 1000 / 60), // in minutes
+                metadata: {
+                    apiSource: 'The Space Devs API',
+                    apiEndpoint: `${API_URL}/event/upcoming/`,
+                    lastFetched: new Date(eventsCache.timestamp).toISOString(),
+                    fetchedAt: eventsCache.timestamp,
+                    fetchHistory: eventsCache.fetchHistory,
+                }
             });
         }
 
@@ -61,6 +69,7 @@ router.get('/', async (req, res) => {
         const response = await fetch(`${API_URL}/event/upcoming/`);
         
         if (!response.ok) {
+            console.error(`❌ Space Devs API returned status: ${response.status} ${response.statusText}`);
             throw new Error('Failed to fetch events from Space Devs API');
         }
         
@@ -102,6 +111,16 @@ router.get('/', async (req, res) => {
         // Update cache
         eventsCache.data = events;
         eventsCache.timestamp = Date.now();
+        
+        // Add to fetch history (keep last 5)
+        eventsCache.fetchHistory.unshift({
+            timestamp: eventsCache.timestamp,
+            date: new Date().toISOString(),
+        });
+        if (eventsCache.fetchHistory.length > 5) {
+            eventsCache.fetchHistory = eventsCache.fetchHistory.slice(0, 5);
+        }
+        
         console.log(`✅ Cached ${events.length} events for 1 hour`);
         
         res.json({
@@ -109,6 +128,13 @@ router.get('/', async (req, res) => {
             count: events.length,
             data: events,
             cached: false,
+            metadata: {
+                apiSource: 'The Space Devs API',
+                apiEndpoint: `${API_URL}/event/upcoming/`,
+                lastFetched: new Date().toISOString(),
+                fetchedAt: Date.now(),
+                fetchHistory: eventsCache.fetchHistory,
+            }
         });
         
     } catch (error) {
@@ -148,6 +174,13 @@ router.get('/:id', async (req, res) => {
                     success: true,
                     data: cachedEvent,
                     cached: true,
+                    metadata: {
+                        apiSource: 'The Space Devs API',
+                        apiEndpoint: `${API_URL}/event/upcoming/`,
+                        lastFetched: new Date(eventsCache.timestamp).toISOString(),
+                        fetchedAt: eventsCache.timestamp,
+                        fetchHistory: eventsCache.fetchHistory,
+                    }
                 });
             }
         }
@@ -204,6 +237,13 @@ router.get('/:id', async (req, res) => {
             success: true,
             data: transformedEvent,
             cached: false,
+            metadata: {
+                apiSource: 'The Space Devs API',
+                apiEndpoint: `${API_URL}/event/upcoming/`,
+                lastFetched: new Date().toISOString(),
+                fetchedAt: Date.now(),
+                fetchHistory: eventsCache.fetchHistory,
+            }
         });
         
     } catch (error) {

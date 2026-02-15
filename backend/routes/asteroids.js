@@ -8,6 +8,7 @@ let asteroidsCache = {
     data: null,
     timestamp: null,
     isFallback: false,
+    fetchHistory: [], // Store last 5 fetch timestamps
 };
 
 // NASA NEO API - Using demo key, user should update with their own
@@ -52,6 +53,13 @@ router.get('/', async (req, res) => {
                 data: asteroidsCache.data,
                 cached: true,
                 cacheAge: Math.floor((Date.now() - asteroidsCache.timestamp) / 1000 / 60),
+                metadata: {
+                    apiSource: 'NASA NEO API',
+                    apiEndpoint: `${NASA_NEO_API}`,
+                    lastFetched: new Date(asteroidsCache.timestamp).toISOString(),
+                    fetchedAt: asteroidsCache.timestamp,
+                    fetchHistory: asteroidsCache.fetchHistory,
+                }
             });
         }
 
@@ -126,6 +134,16 @@ router.get('/', async (req, res) => {
         asteroidsCache.data = asteroids.slice(0, 12); // Limit to 12 asteroids
         asteroidsCache.timestamp = Date.now();
         asteroidsCache.isFallback = false;
+        
+        // Add to fetch history (keep last 5)
+        asteroidsCache.fetchHistory.unshift({
+            timestamp: asteroidsCache.timestamp,
+            date: new Date().toISOString(),
+        });
+        if (asteroidsCache.fetchHistory.length > 5) {
+            asteroidsCache.fetchHistory = asteroidsCache.fetchHistory.slice(0, 5);
+        }
+        
         console.log(`✅ Cached ${asteroidsCache.data.length} asteroids for 1 hour`);
         
         res.json({
@@ -133,6 +151,13 @@ router.get('/', async (req, res) => {
             count: asteroidsCache.data.length,
             data: asteroidsCache.data,
             cached: false,
+            metadata: {
+                apiSource: 'NASA NEO API',
+                apiEndpoint: `${NASA_NEO_API}`,
+                lastFetched: new Date().toISOString(),
+                fetchedAt: Date.now(),
+                fetchHistory: asteroidsCache.fetchHistory,
+            }
         });
         
     } catch (error) {
