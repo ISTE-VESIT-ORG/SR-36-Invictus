@@ -1,20 +1,91 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { Thermometer, Droplets, Wind, AlertTriangle, TrendingUp } from 'lucide-react';
-import { getActiveDisasters } from '@/lib/backend';
+import { Thermometer, Droplets, AlertTriangle } from 'lucide-react';
+import type { ReactNode } from 'react';
+import { getActiveDisasters, getAgricultureSummary } from '@/lib/backend';
 import ImpactClient from './ImpactClient';
+
+interface ImpactCardProps {
+    title: string;
+    description: string;
+    imageUrl: string;
+    icon: ReactNode;
+    metrics: string[];
+    link: string;
+}
+
+function ImpactCard({
+    title,
+    description,
+    imageUrl,
+    icon,
+    metrics,
+    link,
+}: ImpactCardProps) {
+    return (
+        <div className="group relative bg-space-gray-900 border border-space-gray-700 hover:border-cosmic-purple/50 rounded-2xl overflow-hidden transition-all duration-300 ease-out hover:scale-[1.02] hover:shadow-[0_0_20px_rgba(139,92,246,0.2)] flex flex-col">
+            {/* Image */}
+            <div className="relative h-64 w-full bg-space-black">
+                <Image
+                    src={imageUrl}
+                    alt={title}
+                    fill
+                    className="object-cover group-hover:scale-105 transition-transform duration-300 ease-out opacity-80"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-space-gray-900 via-space-gray-900/60 to-transparent" />
+
+                {/* Icon Badge */}
+                <div className="absolute top-4 left-4 p-3 rounded-xl bg-space-black/80 backdrop-blur-sm">
+                    {icon}
+                </div>
+            </div>
+
+            {/* Content */}
+            <div className="p-6 flex flex-col flex-grow">
+                <h3 className="text-2xl font-bold text-star-white font-display mb-3">
+                    {title}
+                </h3>
+
+                <p className="text-space-gray-300 mb-6 flex-grow">
+                    {description}
+                </p>
+
+                {/* Stats */}
+                <div className="grid grid-cols-3 gap-3 mb-6">
+                    {metrics.map((stat, index) => (
+                        <div
+                            key={index}
+                            className="bg-space-gray-800/80 border border-space-gray-700 rounded-lg p-3 text-center flex items-center justify-center min-h-[60px]"
+                        >
+                            <p className="text-sm font-bold text-star-white">{stat}</p>
+                        </div>
+                    ))}
+                </div>
+
+                <Link
+                    href={link}
+                    className="w-full py-2 px-4 bg-space-gray-800 hover:bg-space-gray-700 text-star-white border border-space-gray-700 rounded-lg font-semibold text-sm transition-colors text-center block"
+                >
+                    Learn More →
+                </Link>
+            </div>
+        </div>
+    );
+}
 
 export const revalidate = 3600; // Revalidate every hour
 
 export default async function ImpactPage() {
-    // 1. Fetch dynamic disaster data
-    const activeDisasters = await getActiveDisasters();
+    // 1. Fetch all dynamic data
+    const [activeDisasters, agricultureSummary] = await Promise.all([
+        getActiveDisasters(),
+        getAgricultureSummary(),
+    ]);
     
-    // 2. Calculate dynamic stats
+    // 2. Calculate disaster stats
     const totalActive = activeDisasters.length;
     
-    // Simple keyword matching for stats
     const wildfireCount = activeDisasters.filter(d => 
         d.disaster_type.toLowerCase().includes('wildfire')
     ).length;
@@ -28,7 +99,6 @@ export default async function ImpactPage() {
         d.disaster_type.toLowerCase().includes('cyclone')
     ).length;
 
-    // Determine stats to show based on what's active (prioritize non-zero)
     const disasterStats = [];
     if (totalActive > 0) disasterStats.push(`${totalActive} Active Events`);
     else disasterStats.push('Calculating...');
@@ -39,29 +109,49 @@ export default async function ImpactPage() {
     if (floodCount > 0) disasterStats.push(`${floodCount} Floods`);
     else if (disasterStats.length < 3) disasterStats.push('Global Watch');
 
-    // Ensure exactly 3 stats for layout consistency
     while (disasterStats.length < 3) {
         disasterStats.push('Monitoring...');
     }
+
+    // 3. Format agriculture stats
+    const formatAreaInAcres = (acres: number): string => {
+        if (acres >= 1_000_000_000) {
+            return `${(acres / 1_000_000_000).toFixed(1)}B Acres`;
+        } else if (acres >= 1_000_000) {
+            return `${(acres / 1_000_000).toFixed(0)}M Acres`;
+        }
+        return `${acres.toLocaleString()} Acres`;
+    };
+
+    const agricultureStats = [
+        formatAreaInAcres(agricultureSummary.totalAreaAcres),
+        `${agricultureSummary.avgVegetationHealth}% Health`,
+        `${agricultureSummary.activeZones} Active Zones`,
+    ];
+
+    // 4. Format climate stats
+    const climateStats = [
+        'Avg Temp: +1.6°C',
+        'CO₂: 423 ppm',
+        'Sea Level: +103 mm',
+    ];
 
     const impactShowcase = [
         {
             title: 'Agriculture Monitoring',
             image: '/images/agriculture-monitoring.png',
-            icon: <Droplets className="w-8 h-8" />,
-            color: 'text-aurora-green',
-            stats: ['2.5B Acres', '85% Coverage', '20% Yield ↑'],
+            icon: <Droplets className="w-8 h-8 text-aurora-green" />,
+            stats: agricultureStats,
             description: 'Satellites monitor crop health, soil moisture, and predict yields using multispectral imaging.',
-            link: '#' // Placeholder link
+            link: '/impact/agriculture-monitoring'
         },
         {
             title: 'Disaster Response',
             image: '/images/wildfire-monitoring.png',
-            icon: <AlertTriangle className="w-8 h-8" />,
-            color: 'text-meteor-orange',
-            stats: disasterStats, // Dynamic!
+            icon: <AlertTriangle className="w-8 h-8 text-meteor-orange" />,
+            stats: disasterStats,
             description: 'Real-time tracking of wildfires, floods, and earthquakes to coordinate emergency response.',
-            link: '/impact/disaster-response' // Route to new module
+            link: '/impact/disaster-response'
         },
     ];
 
@@ -97,79 +187,28 @@ export default async function ImpactPage() {
                     {/* Impact Showcase */}
                     <div className="grid lg:grid-cols-2 gap-8 mb-12">
                         {impactShowcase.map((item, i) => (
-                            <div
+                            <ImpactCard
                                 key={i}
-                                className="group relative bg-space-gray-900 border border-space-gray-700 hover:border-cosmic-purple/50 rounded-2xl overflow-hidden transition-all duration-300 flex flex-col"
-                            >
-                                {/* Image */}
-                                <div className="relative h-64 w-full bg-space-black">
-                                    <Image
-                                        src={item.image}
-                                        alt={item.title}
-                                        fill
-                                        className="object-cover group-hover:scale-110 transition-transform duration-500 opacity-80"
-                                    />
-                                    <div className="absolute inset-0 bg-gradient-to-t from-space-gray-900 via-space-gray-900/60 to-transparent" />
-
-                                    {/* Icon Badge */}
-                                    <div className={`absolute top-4 left-4 p-3 rounded-xl bg-space-black/80 backdrop-blur-sm ${item.color}`}>
-                                        {item.icon}
-                                    </div>
-                                </div>
-
-                                {/* Content */}
-                                <div className="p-6 flex flex-col flex-grow">
-                                    <h3 className="text-2xl font-bold text-star-white font-display mb-3">
-                                        {item.title}
-                                    </h3>
-
-                                    <p className="text-space-gray-300 mb-6 flex-grow">
-                                        {item.description}
-                                    </p>
-
-                                    {/* Stats */}
-                                    <div className="grid grid-cols-3 gap-3 mb-6">
-                                        {item.stats.map((stat, j) => (
-                                            <div
-                                                key={j}
-                                                className="bg-space-gray-800/80 border border-space-gray-700 rounded-lg p-3 text-center flex items-center justify-center min-h-[60px]"
-                                            >
-                                                <p className="text-sm font-bold text-star-white">{stat}</p>
-                                            </div>
-                                        ))}
-                                    </div>
-
-                                    <Link 
-                                        href={item.link}
-                                        className="w-full py-2 px-4 bg-space-gray-800 hover:bg-space-gray-700 text-star-white border border-space-gray-700 rounded-lg font-semibold text-sm transition-colors text-center block"
-                                    >
-                                        Learn More →
-                                    </Link>
-                                </div>
-                            </div>
+                                title={item.title}
+                                description={item.description}
+                                imageUrl={item.image}
+                                icon={item.icon}
+                                metrics={item.stats}
+                                link={item.link}
+                            />
                         ))}
                     </div>
 
                     {/* Additional Content Grid */}
                     <div className="grid md:grid-cols-2 gap-6 mb-12">
-                         <div className="bg-space-gray-900/80 border border-space-gray-700 rounded-2xl p-8 hover:border-aurora-green/30 transition-all">
-                            <div className="inline-flex p-4 rounded-xl bg-meteor-orange/10 text-meteor-orange mb-4">
-                                <Thermometer className="w-8 h-8" />
-                            </div>
-                            <h3 className="text-2xl font-bold text-star-white font-display mb-2">Climate Change</h3>
-                            <p className="text-space-gray-300">
-                                Tracking global temperature anomalies, ice cap melting rates, and sea level rise with millimeter precision.
-                            </p>
-                        </div>
-                         <div className="bg-space-gray-900/80 border border-space-gray-700 rounded-2xl p-8 hover:border-galaxy-cyan/30 transition-all">
-                            <div className="inline-flex p-4 rounded-xl bg-aurora-green/10 text-aurora-green mb-4">
-                                <Wind className="w-8 h-8" />
-                            </div>
-                            <h3 className="text-2xl font-bold text-star-white font-display mb-2">Air Quality</h3>
-                            <p className="text-space-gray-300">
-                                Monitoring global aerosol optical depth, nitrogen dioxide levels, and pollution transport patterns.
-                            </p>
-                        </div>
+                         <ImpactCard
+                            title="Climate Change"
+                            description="Tracking global temperature anomalies, ice cap melting rates, and sea level rise with millimeter precision."
+                            imageUrl="/images/aurora.png"
+                            icon={<Thermometer className="w-8 h-8 text-meteor-orange" />}
+                            metrics={climateStats}
+                            link="/impact/climate-change"
+                         />
                     </div>
 
                 </div>

@@ -62,7 +62,7 @@ export const disasterController = {
         // If not in cache, maybe our cache is stale or it's a new event direct link. 
         // We could fetch the whole list to refresh cache.
         console.log(`Event ${id} not in cache, refreshing all active disasters...`);
-        const allEvents = await this.getActiveDisasters();
+        const allEvents = await disasterController.getActiveDisasters();
         return allEvents.find(e => e.id === id) || null;
 
     } catch (error) {
