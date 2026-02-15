@@ -1,5 +1,6 @@
 import Image from 'next/image';
 import { BookOpen, Video, Award, Users } from 'lucide-react';
+import LearnClient from './LearnClient';
 
 export default function LearnPage() {
     const learningModules = [
@@ -38,7 +39,8 @@ export default function LearnPage() {
     ];
 
     return (
-        <div className="min-h-screen bg-space-black pt-24 pb-16">
+        <LearnClient>
+            <div className="min-h-screen bg-space-black pt-24 pb-16">
             {/* Background Image */}
             <div className="absolute inset-0 z-0">
                 <Image
@@ -208,5 +210,6 @@ export default function LearnPage() {
                 </div>
             </div>
         </div>
+        </LearnClient>
     );
 }
