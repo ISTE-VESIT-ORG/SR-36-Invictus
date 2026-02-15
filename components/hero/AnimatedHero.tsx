@@ -4,9 +4,11 @@ import { motion } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/context/AuthContext';
 
 export default function SimpleHero() {
     const router = useRouter();
+    const { user, loading } = useAuth();
 
     return (
         <div className="relative min-h-screen flex items-center justify-center overflow-hidden">
@@ -74,24 +76,28 @@ export default function SimpleHero() {
                     transition={{ duration: 0.6, delay: 0.6 }}
                     className="flex flex-col sm:flex-row gap-4 justify-center items-center"
                 >
-                    <motion.button
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        onClick={() => router.push('/login')}
-                        className="group px-8 py-4 bg-gradient-to-r from-cosmic-purple to-nebula-pink text-white rounded-full font-semibold text-lg shadow-lg hover:shadow-cosmic-purple/50 transition-all flex items-center gap-2"
-                    >
-                        Start Exploring
-                        <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                    </motion.button>
+                    {!user && !loading && (
+                        <>
+                            <motion.button
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                                onClick={() => router.push('/login')}
+                                className="group px-8 py-4 bg-gradient-to-r from-cosmic-purple to-nebula-pink text-white rounded-full font-semibold text-lg shadow-lg hover:shadow-cosmic-purple/50 transition-all flex items-center gap-2"
+                            >
+                                Start Exploring
+                                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                            </motion.button>
 
-                    <motion.button
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        onClick={() => router.push('/events')}
-                        className="px-8 py-4 bg-space-gray-800/50 backdrop-blur-sm border border-space-gray-700 text-star-white rounded-full font-semibold text-lg hover:bg-space-gray-700/50 transition-all"
-                    >
-                        View Events
-                    </motion.button>
+                            <motion.button
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                                onClick={() => router.push('/events')}
+                                className="px-8 py-4 bg-space-gray-800/50 backdrop-blur-sm border border-space-gray-700 text-star-white rounded-full font-semibold text-lg hover:bg-space-gray-700/50 transition-all"
+                            >
+                                View Events
+                            </motion.button>
+                        </>
+                    )}
                 </motion.div>
 
                 {/* Stats */}

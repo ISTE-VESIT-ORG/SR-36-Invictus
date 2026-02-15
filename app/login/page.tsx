@@ -21,7 +21,7 @@ export default function LoginPage() {
 
     // Prefetch portions of the app for faster transitions
     useEffect(() => {
-        router.prefetch('/events');
+        router.prefetch('/');
     }, [router]);
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -35,8 +35,8 @@ export default function LoginPage() {
             } else {
                 await signUp(email, password, name);
             }
-            // Use client-side navigation for instant transition
-            router.push('/events');
+            // Redirect to landing page after successful login
+            router.replace('/');
         } catch (err: any) {
             setError(err.message.replace('Firebase: ', ''));
         } finally {

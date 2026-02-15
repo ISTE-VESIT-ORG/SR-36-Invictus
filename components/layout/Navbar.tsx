@@ -5,11 +5,35 @@ import { Rocket, Github, Twitter, LogOut, User as UserIcon } from 'lucide-react'
 import Link from 'next/link';
 import { GlowingButton } from '@/components/ui/GlowingButton';
 import { useAuth } from '@/context/AuthContext';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
+
+interface NavLinkProps {
+    href: string;
+    children: React.ReactNode;
+    isActive: boolean;
+}
+
+function NavLink({ href, children, isActive }: NavLinkProps) {
+    return (
+        <Link 
+            href={href} 
+            className={`
+                relative px-4 py-2 rounded-xl transition-all duration-300
+                ${isActive 
+                    ? 'text-white font-semibold bg-white/10' 
+                    : 'text-space-gray-300 font-medium hover:text-white hover:bg-white/5'
+                }
+            `}
+        >
+            {children}
+        </Link>
+    );
+}
 
 export function Navbar() {
     const { user, logout } = useAuth();
     const router = useRouter();
+    const pathname = usePathname();
 
     const handleLogout = async () => {
         await logout();
@@ -40,18 +64,18 @@ export function Navbar() {
                     {/* Navigation Links */}
                     {user && (
                         <div className="hidden md:flex items-center gap-8">
-                            <Link href="/events" className="text-space-gray-300 hover:text-star-white transition-colors">
+                            <NavLink href="/events" isActive={pathname === '/events'}>
                                 Events
-                            </Link>
-                            <Link href="/missions" className="text-space-gray-300 hover:text-star-white transition-colors">
+                            </NavLink>
+                            <NavLink href="/missions" isActive={pathname === '/missions'}>
                                 Missions
-                            </Link>
-                            <Link href="/impact" className="text-space-gray-300 hover:text-star-white transition-colors">
+                            </NavLink>
+                            <NavLink href="/impact" isActive={pathname === '/impact'}>
                                 Impact
-                            </Link>
-                            <Link href="/learn" className="text-space-gray-300 hover:text-star-white transition-colors">
+                            </NavLink>
+                            <NavLink href="/learn" isActive={pathname === '/learn'}>
                                 Learn
-                            </Link>
+                            </NavLink>
                         </div>
                     )}
 
@@ -73,12 +97,20 @@ export function Navbar() {
                             </button>
                         </div>
                     ) : (
-                        <GlowingButton
-                            onClick={() => router.push('/login')}
-                            className="text-sm px-6 py-2"
-                        >
-                            Get Started
-                        </GlowingButton>
+                        <div className="flex items-center gap-3">
+                            <button
+                                onClick={() => router.push('/login')}
+                                className="text-sm text-space-gray-300 hover:text-star-white transition-colors"
+                            >
+                                Login
+                            </button>
+                            <GlowingButton
+                                onClick={() => router.push('/login')}
+                                className="text-sm px-6 py-2"
+                            >
+                                Get Started
+                            </GlowingButton>
+                        </div>
                     )}
                 </div>
             </div>

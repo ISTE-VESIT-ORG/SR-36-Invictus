@@ -3,6 +3,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Thermometer, Droplets, Wind, AlertTriangle, TrendingUp } from 'lucide-react';
 import { getActiveDisasters } from '@/lib/backend';
+import ImpactClient from './ImpactClient';
 
 export const revalidate = 3600; // Revalidate every hour
 
@@ -65,7 +66,8 @@ export default async function ImpactPage() {
     ];
 
     return (
-        <div className="min-h-screen bg-space-black">
+        <ImpactClient>
+            <div className="min-h-screen bg-space-black">
             {/* Hero Section */}
             <div className="relative h-[60vh] flex items-center justify-center overflow-hidden">
                 <Image
@@ -173,5 +175,6 @@ export default async function ImpactPage() {
                 </div>
             </div>
         </div>
+        </ImpactClient>
     );
 }

@@ -27,6 +27,14 @@ const nextConfig = {
         protocol: 'https',
         hostname: '**.nasa.gov',
       },
+      {
+        protocol: 'https',
+        hostname: 'img.youtube.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'apod.nasa.gov',
+      },
     ],
   },
   webpack: (config) => {
