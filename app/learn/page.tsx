@@ -1,10 +1,12 @@
 import Image from 'next/image';
+import Link from 'next/link';
 import { BookOpen, Video, Award, Users } from 'lucide-react';
 import LearnClient from './LearnClient';
 
 export default function LearnPage() {
     const learningModules = [
         {
+            id: 'solar-system-basics',
             title: 'Solar System Basics',
             icon: '🪐',
             level: 'Beginner',
@@ -13,6 +15,7 @@ export default function LearnPage() {
             description: 'Explore our cosmic neighborhood and learn about each planet.',
         },
         {
+            id: 'satellite-technology',
             title: 'Satellite Technology',
             icon: '🛰️',
             level: 'Intermediate',
@@ -21,6 +24,7 @@ export default function LearnPage() {
             description: 'Understand how satellites work and their applications.',
         },
         {
+            id: 'space-exploration-history',
             title: 'Space Exploration History',
             icon: '🚀',
             level: 'Beginner',
@@ -29,6 +33,7 @@ export default function LearnPage() {
             description: 'Journey through humanity\'s greatest space achievements.',
         },
         {
+            id: 'astrophysics-fundamentals',
             title: 'Astrophysics Fundamentals',
             icon: '⭐',
             level: 'Advanced',
@@ -129,9 +134,12 @@ export default function LearnPage() {
                                 </div>
                             </div>
 
-                            <button className="w-full py-2 px-4 bg-cosmic-purple hover:bg-cosmic-purple/90 text-white rounded-lg font-semibold text-sm transition-colors">
+                            <Link
+                                href={`/learn/${module.id}`}
+                                className="w-full py-2 px-4 bg-cosmic-purple hover:bg-cosmic-purple/90 text-white rounded-lg font-semibold text-sm transition-colors block text-center"
+                            >
                                 Start Learning →
-                            </button>
+                            </Link>
                         </div>
                     ))}
                 </div>

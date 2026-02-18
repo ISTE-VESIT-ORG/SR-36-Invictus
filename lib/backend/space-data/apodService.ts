@@ -5,6 +5,8 @@ const NASA_API_KEY =
     ? process.env.NASA_API_KEY || process.env.NEXT_PUBLIC_NASA_API_KEY
     : '';
 
+console.log('[APOD Service] NASA_API_KEY:', NASA_API_KEY);
+
 export interface ApodData {
   date: string;
   title: string;
