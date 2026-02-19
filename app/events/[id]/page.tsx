@@ -1,8 +1,11 @@
-import { Calendar, MapPin, Eye, Clock, Compass, Info, Lightbulb, Image as ImageIcon, ArrowLeft } from 'lucide-react';
+import { Calendar, MapPin, Eye, Clock, Compass, ArrowLeft } from 'lucide-react';
 import { format } from 'date-fns';
 import Link from 'next/link';
 import { EventType } from '@/types/events';
 import EventActionButtons from '@/components/events/EventActionButtons';
+
+import dynamicImport from 'next/dynamic';
+const EventAIDetailsClient = dynamicImport(() => import('./EventAIDetailsClient'), { ssr: false });
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 300; // Cache for 5 minutes
@@ -343,51 +346,9 @@ export default async function EventDetailPage({
                 <div className="grid md:grid-cols-3 gap-6">
                     {/* Left Column - Main Details */}
                     <div className="md:col-span-2 space-y-6">
-                        {/* Detailed Description */}
-                        <div className="bg-space-gray-900/80 border border-space-gray-700 rounded-2xl p-6">
-                            <div className="flex items-center gap-2 mb-4">
-                                <Info className="w-5 h-5 text-galaxy-cyan" />
-                                <h2 className="text-2xl font-bold text-star-white font-display">
-                                    About This Event
-                                </h2>
-                            </div>
-                            <p className="text-space-gray-300 leading-relaxed">
-                                {event.description.detailed || event.description.simple}
-                            </p>
-                        </div>
 
-                        {/* Why It Matters */}
-                        <div className="bg-space-gray-900/80 border border-space-gray-700 rounded-2xl p-6">
-                            <div className="flex items-center gap-2 mb-4">
-                                <span className="text-2xl">✨</span>
-                                <h2 className="text-2xl font-bold text-star-white font-display">
-                                    Why It Matters
-                                </h2>
-                            </div>
-                            <p className="text-space-gray-300 leading-relaxed">
-                                {event.whyItMatters}
-                            </p>
-                        </div>
-
-                        {/* Observation Tips */}
-                        <div className="bg-space-gray-900/80 border border-space-gray-700 rounded-2xl p-6">
-                            <div className="flex items-center gap-2 mb-4">
-                                <Lightbulb className="w-5 h-5 text-meteor-orange" />
-                                <h2 className="text-2xl font-bold text-star-white font-display">
-                                    {eventType === 'launch' ? 'Launch Information' :
-                                     eventType === 'asteroid' ? 'Asteroid Information' :
-                                     'Observation Tips'}
-                                </h2>
-                            </div>
-                            <ul className="space-y-3">
-                                {event.observationTips.map((tip: string, index: number) => (
-                                    <li key={index} className="flex items-start gap-3">
-                                        <span className="text-cosmic-purple text-xl">•</span>
-                                        <span className="text-space-gray-300">{tip}</span>
-                                    </li>
-                                ))}
-                            </ul>
-                        </div>
+                        {/* AI-Generated Event Details */}
+                        <EventAIDetailsClient event={event} eventType={eventType} />
 
                         {/* KP Index History - Only for Aurora Events */}
                         {eventType === 'aurora' && (event as any).kpHistory && (
