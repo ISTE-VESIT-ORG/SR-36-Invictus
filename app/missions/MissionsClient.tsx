@@ -6,6 +6,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useCallback } from 'react';
 
 interface Mission {
   id: string;
@@ -43,6 +44,36 @@ export default function MissionsClient({ initialMissions }: MissionsClientProps)
             });
         }
     }, [initialMissions]);
+
+    // Prefetch important routes and warm API endpoints to reduce navigation latency
+    const warmEndpoint = useCallback(async (url: string, timeoutMs = 3000) => {
+        try {
+            const controller = new AbortController();
+            const id = setTimeout(() => controller.abort(), timeoutMs);
+            await fetch(url, { signal: controller.signal, cache: 'no-store' });
+            clearTimeout(id);
+        } catch (err) {
+            // ignore errors — warming is best-effort
+            // console.debug('[Missions] warmEndpoint failed', url, err);
+        }
+    }, []);
+
+    useEffect(() => {
+        // Prefetch page code and warm server APIs
+        try {
+            router.prefetch('/events');
+            router.prefetch('/impact');
+            router.prefetch('/learn');
+
+            // Warm API endpoints (best-effort, short timeout)
+            const backend = (process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000/api').replace(/\/$/, '');
+            warmEndpoint(`${backend}/events`);
+            warmEndpoint(`${backend}/impact/summary`);
+            warmEndpoint(`${backend}/learning-content`);
+        } catch (e) {
+            // ignore
+        }
+    }, [router, warmEndpoint]);
 
     const handleImageError = (missionId: string) => {
         setImageErrors(prev => new Set(prev).add(missionId));
@@ -217,6 +248,14 @@ export default function MissionsClient({ initialMissions }: MissionsClientProps)
 
                             <Link 
                                 href={`/missions/${mission.id}`}
+                                onMouseEnter={() => {
+                                    // Prefetch mission detail page and warm its backend route
+                                    try {
+                                        router.prefetch(`/missions/${mission.id}`);
+                                        const backend = (process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000/api').replace(/\/$/, '');
+                                        warmEndpoint(`${backend}/missions/${mission.id}`);
+                                    } catch (e) {}
+                                }}
                                 className="w-full py-2 px-4 bg-space-gray-800 hover:bg-space-gray-700 text-star-white border border-space-gray-700 rounded-lg font-semibold text-sm transition-colors text-center block"
                             >
                                 View Details →

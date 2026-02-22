@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
 import { Inter, Space_Grotesk, JetBrains_Mono } from 'next/font/google';
+import { Starfield } from '@/components/ui/Starfield';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
-import { Starfield } from '@/components/ui/Starfield';
 import { AuthProvider } from '@/context/AuthContext';
 import './globals.css';
 

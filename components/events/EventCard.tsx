@@ -3,7 +3,7 @@
 import { motion } from 'framer-motion';
 import { Calendar, MapPin, Bell, Eye } from 'lucide-react';
 import { CelestialEvent, EventType } from '@/types/events';
-import { formatDistanceToNow, format } from 'date-fns';
+import { formatDistanceToNow, format, isValid } from 'date-fns';
 import Link from 'next/link';
 
 interface EventCardProps {
@@ -25,6 +25,10 @@ export function EventCard({ event, index, eventType = 'celestial' }: EventCardPr
         };
         return icons[type] || '⭐';
     };
+
+    // Defensive parsing: props may arrive as ISO strings when serialized from server
+    const peakDate = event?.peakTime ? new Date(event.peakTime) : null;
+    const startDate = event?.date ? new Date(event.date) : null;
 
     return (
         <motion.div
@@ -56,7 +60,9 @@ export function EventCard({ event, index, eventType = 'celestial' }: EventCardPr
                 <div className="flex items-center gap-2 text-sm">
                     <Calendar className="w-4 h-4 text-galaxy-cyan" />
                     <span className="text-space-gray-300">
-                        {formatDistanceToNow(event.peakTime, { addSuffix: true })}
+                        {peakDate && isValid(peakDate)
+                            ? formatDistanceToNow(peakDate, { addSuffix: true })
+                            : 'TBD'}
                     </span>
                 </div>
                 <div className="flex items-center gap-2 text-sm">
@@ -66,7 +72,7 @@ export function EventCard({ event, index, eventType = 'celestial' }: EventCardPr
                 <div className="flex items-center gap-2 text-sm col-span-2">
                     <Calendar className="w-4 h-4 text-meteor-orange" />
                     <span className="text-space-gray-300">
-                        Start: {format(event.date, 'MMM d, yyyy h:mm a')}
+                        Start: {startDate && isValid(startDate) ? format(startDate, 'MMM d, yyyy h:mm a') : 'TBA'}
                     </span>
                 </div>
                 <div className="flex items-center gap-2 text-sm col-span-2">

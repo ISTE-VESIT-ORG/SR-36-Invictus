@@ -23,24 +23,20 @@ export interface EonetEvent {
     }[];
 }
 
+import { fetchWithRetry } from '@/lib/backend/fetchWithRetry';
+
 export const eonetService = {
     async fetchActiveDisasters(): Promise<EonetEvent[]> {
         const API_URL = 'https://eonet.gsfc.nasa.gov/api/v3/events?status=open&days=20'; // Fetch last 20 days to ensure freshness
         
         try {
-            const response = await fetch(API_URL, {
-                headers: {
-                    'Accept': 'application/json'
-                },
-                next: { revalidate: 3600 }
+            const data = await fetchWithRetry<{ events: any[] }>(API_URL, {
+                headers: { 'Accept': 'application/json' },
+                timeoutMs: 4000,
+                retries: 2,
+                metricName: 'eonet'
             });
 
-            if (!response.ok) {
-                console.warn(`NASA EONET API failed with status: ${response.status}`);
-                throw new Error('API_ERROR');
-            }
-
-            const data = await response.json();
             return data.events || [];
 
         } catch (error) {

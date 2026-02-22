@@ -9,12 +9,12 @@ interface StarfieldProps {
     speed?: 'slow' | 'medium' | 'fast'; // Control animation speed
 }
 
-export function Starfield({ className = '', density = 'medium', speed = 'medium' }: StarfieldProps) {
+export function Starfield({ className = '', density = 'low', speed = 'medium' }: StarfieldProps) {
     const [stars, setStars] = useState<{ id: number; x: number; y: number; size: number; delay: number; duration: number }[]>([]);
 
     useEffect(() => {
-        // Generate stars on mount
-        const count = density === 'low' ? 30 : density === 'medium' ? 60 : 100;
+        // Generate stars on mount - reduced default density for better performance
+        const count = density === 'low' ? 20 : density === 'medium' ? 40 : 70;
         const newStars = Array.from({ length: count }).map((_, i) => ({
             id: i,
             x: Math.random() * 100, // percentage
@@ -42,8 +42,7 @@ export function Starfield({ className = '', density = 'medium', speed = 'medium'
                         height: `${star.size}px`,
                     }}
                     animate={{
-                        opacity: [0.2, 0.8, 0.2],
-                        scale: [0.8, 1.2, 0.8],
+                        opacity: [0.3, 0.7, 0.3],
                     }}
                     transition={{
                         duration: star.duration,

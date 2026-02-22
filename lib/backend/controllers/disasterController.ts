@@ -1,50 +1,53 @@
 import { Timestamp } from 'firebase-admin/firestore';
 import { eonetService } from '@/lib/backend/services/eonetService';
 import { disasterRepo } from '@/lib/backend/firebase/disasterRepo';
+import { fetchWithBackgroundRefresh } from '@/lib/backend/simpleCache';
 
 export const disasterController = {
 
   // Fetch active disasters with fallback strategy
   async getActiveDisasters() {
+    // Use in-process cache with background refresh to avoid making the EONET request
+    // on every navigation. TTL: 5 minutes.
     try {
-      // 1. Try fetching fresh data from NASA EONET API
-      const apiEvents = await eonetService.fetchActiveDisasters();
-      
-      if (apiEvents && apiEvents.length > 0) {
-        // 2. Normalize data
-        const normalizedEvents = apiEvents
-          .map(event => eonetService.normalizeDisasterEvent(event))
-          .filter(e =>
+      const raw = await fetchWithBackgroundRefresh('eonet_active_disasters', 5 * 60_000, async () => {
+        // fetch fresh events from EONET
+        const apiEvents = await eonetService.fetchActiveDisasters();
+        return apiEvents || [];
+      });
+
+      if (raw && raw.length > 0) {
+        const normalizedEvents = raw
+          .map((event: any) => eonetService.normalizeDisasterEvent(event))
+          .filter((e: any) =>
             Array.isArray(e.coordinates) &&
             e.coordinates.length > 0 &&
             Number.isFinite(e.coordinates[0]?.lat) &&
             Number.isFinite(e.coordinates[0]?.lng)
           );
 
-        // 3. Add Firestore Timestamp and save to Firestore
-        const eventsToSave = normalizedEvents.map(e => ({
-          ...e,
-          lastUpdated: Timestamp.now()
-        }));
+        // Save to Firestore asynchronously but don't block response
+        (async () => {
+          try {
+            const eventsToSave = normalizedEvents.map((e: any) => ({ ...e, lastUpdated: Timestamp.now() }));
+            await disasterRepo.saveBatch(eventsToSave);
+          } catch (err) {
+            console.warn('[disasterController] failed to save disasters to Firestore:', err);
+          }
+        })();
 
-        await disasterRepo.saveBatch(eventsToSave);
-
-        return eventsToSave;
+        return normalizedEvents;
       }
-      
-      return []; 
 
-    } catch (error) {
-      console.warn('EONET API fetch failed or rate-limited. Falling back to Firestore cache.');
-      
-      // 4. Fallback: Fetch from Firestore
+      // Fallback: return cached Firestore data if available
       const cachedEvents = await disasterRepo.getAll();
-      
       if (cachedEvents.length === 0) {
-        console.error('No cached disaster events available in Firestore either.');
-        return []; 
+        return [];
       }
-      
+      return cachedEvents;
+    } catch (error) {
+      console.error('Error fetching disasters (cached):', error);
+      const cachedEvents = await disasterRepo.getAll();
       return cachedEvents;
     }
   },

@@ -1,5 +1,7 @@
 // Launch Library 2 API Service
 
+import { fetchWithRetry } from '@/lib/backend/fetchWithRetry';
+
 interface LaunchLibraryResponse {
   results: any[];
 }
@@ -9,26 +11,18 @@ export const launchLibraryService = {
     const API_URL = 'https://ll.thespacedevs.com/2.2.0/launch/upcoming/';
     
     try {
-      const response = await fetch(API_URL, {
+      const data: LaunchLibraryResponse = await fetchWithRetry(API_URL, {
         headers: {
           'Accept': 'application/json',
-          // Add User-Agent if required by API to avoid blocks
           'User-Agent': 'SpaceMissionsApp/1.0'
         },
-        next: { revalidate: 3600 } // Cache API reponse for 1 hour at Next.js level too
+        // Timeout and retries tuned for launch library
+        timeoutMs: 4000,
+        retries: 2,
+        metricName: 'launchLibrary'
       });
 
-      if (!response.ok) {
-        if (response.status === 429) {
-          console.warn('Launch Library API Rate Limited (429)');
-          throw new Error('RATE_LIMITED');
-        }
-        throw new Error(`API Error: ${response.statusText}`);
-      }
-
-      const data: LaunchLibraryResponse = await response.json();
       return data.results || [];
-      
     } catch (error) {
       console.error('Error fetching from Launch Library API:', error);
       throw error; // Rethrow so controller handles fallback
@@ -39,24 +33,17 @@ export const launchLibraryService = {
     const API_URL = `https://ll.thespacedevs.com/2.2.0/launch/${id}/`;
     
     try {
-      const response = await fetch(API_URL, {
+      const data = await fetchWithRetry(API_URL, {
         headers: {
           'Accept': 'application/json',
           'User-Agent': 'SpaceMissionsApp/1.0'
         },
-        next: { revalidate: 3600 }
+        timeoutMs: 4000,
+        retries: 2,
+        metricName: 'launchLibrary'
       });
 
-      if (!response.ok) {
-        if (response.status === 429) {
-          console.warn('Launch Library API Rate Limited (429)');
-          throw new Error('RATE_LIMITED');
-        }
-        throw new Error(`API Error: ${response.statusText}`);
-      }
-
-      return await response.json();
-      
+      return data;
     } catch (error) {
       console.error(`Error fetching mission ${id} from Launch Library API:`, error);
       throw error;

@@ -9,6 +9,8 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+const fetch = require('node-fetch');
+const path = require('path');
 
 // Middleware
 app.use(cors());
@@ -169,6 +171,7 @@ app.use('/api/launches', require('./routes/launches'));
 app.use('/api/iss-operations', require('./routes/iss-operations'));
 app.use('/api/asteroids', require('./routes/asteroids'));
 app.use('/api/cache', require('./routes/cache'));
+app.use('/api/admin', require('./routes/admin'));
 
 // Health check
 app.get('/api/health', (req, res) => {
@@ -182,4 +185,67 @@ app.get('/api/health', (req, res) => {
 // Start server
 app.listen(PORT, () => {
         console.log(`🚀 AstroView Backend running on http://localhost:${PORT}`);
+
+        // Schedule background cache refreshes to warm caches before users arrive
+        try {
+            const REFRESH_INTERVAL = parseInt(process.env.CACHE_REFRESH_INTERVAL_MS || String(15 * 60_000), 10); // default 15 minutes
+            const FRONTEND_BASE = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+
+            async function refreshAllCaches() {
+                console.log('[cache-refresh] Starting background cache refresh');
+                try {
+                    // Clear backend route caches (if available) so fetches will repopulate
+                    try { require('./routes/events').clearCache(); } catch (e) { /* ignore */ }
+                    try { require('./routes/launches').clearCache(); } catch (e) { /* ignore */ }
+                    try { require('./routes/iss-operations').clearCache(); } catch (e) { /* ignore */ }
+                    try { require('./routes/asteroids').clearCache(); } catch (e) { /* ignore */ }
+
+                    // Warm backend endpoints
+                    const backendEndpoints = [
+                        `http://localhost:${PORT}/api/events`,
+                        `http://localhost:${PORT}/api/launches`,
+                        `http://localhost:${PORT}/api/iss-operations`,
+                        `http://localhost:${PORT}/api/asteroids`,
+                    ];
+
+                    for (const url of backendEndpoints) {
+                        try {
+                            const t0 = Date.now();
+                            const res = await fetch(url, { timeout: 20_000 });
+                            const ms = Date.now() - t0;
+                            console.info(`[cache-refresh] Warmed ${url} in ${ms}ms (status ${res.status})`);
+                        } catch (err) {
+                            console.warn(`[cache-refresh] Failed to warm ${url}:`, err.message || err);
+                        }
+                    }
+
+                    // Warm Next.js/Frontend endpoints that run server controllers (impact summary, missions etc.)
+                    const frontendEndpoints = [
+                        `${FRONTEND_BASE}/api/impact/summary`,
+                        `${FRONTEND_BASE}/api/missions`,
+                    ];
+
+                    for (const url of frontendEndpoints) {
+                        try {
+                            const t0 = Date.now();
+                            const res = await fetch(url, { timeout: 20_000 });
+                            const ms = Date.now() - t0;
+                            console.info(`[cache-refresh] Warmed ${url} in ${ms}ms (status ${res.status})`);
+                        } catch (err) {
+                            console.warn(`[cache-refresh] Failed to warm ${url}:`, err.message || err);
+                        }
+                    }
+
+                    console.log('[cache-refresh] Completed background cache refresh');
+                } catch (err) {
+                    console.error('[cache-refresh] Unexpected error during refresh:', err);
+                }
+            }
+
+            // Run immediately, then on interval
+            refreshAllCaches().catch(() => {});
+            setInterval(() => refreshAllCaches().catch(() => {}), REFRESH_INTERVAL);
+        } catch (err) {
+            console.error('Failed to start cache refresh scheduler:', err);
+        }
 });

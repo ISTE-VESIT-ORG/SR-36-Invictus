@@ -46,6 +46,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const signIn = async (email: string, password: string) => {
         const userCredential = await signInWithEmailAndPassword(auth, email, password);
         setUser(userCredential.user); // Immediate update for faster UI response
+        setLoading(false); // ensure consumers don't remain in loading state after sign-in
     };
 
     const signUp = async (email: string, password: string, name: string) => {
@@ -56,27 +57,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         });
         // Force refresh user to get display name
         setUser({ ...userCredential.user, displayName: name });
+        setLoading(false);
     };
 
     const logout = async () => {
         await signOut(auth);
+        setUser(null);
+        setLoading(false);
     };
 
     return (
         <AuthContext.Provider value={{ user, loading, signIn, signUp, logout }}>
-            {loading ? (
-                <div className="fixed inset-0 bg-space-black flex flex-col items-center justify-center z-50">
-                    <motion.div
-                        animate={{ rotate: 360 }}
-                        transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-                    >
-                        <Rocket className="w-12 h-12 text-cosmic-purple" />
-                    </motion.div>
-                    <p className="mt-4 text-space-gray-400 font-mono animate-pulse">Initializing Systems...</p>
-                </div>
-            ) : (
-                children
-            )}
+            {children}
         </AuthContext.Provider>
     );
 }

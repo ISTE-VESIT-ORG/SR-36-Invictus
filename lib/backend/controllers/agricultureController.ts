@@ -2,6 +2,7 @@ import { Timestamp } from 'firebase-admin/firestore';
 import { agricultureService } from '@/lib/backend/services/agricultureService';
 import { agricultureRepo } from '@/lib/backend/firebase/agricultureRepo';
 import { impactAgricultureRepo } from '@/lib/backend/firebase/impactAgricultureRepo';
+import { fetchWithBackgroundRefresh } from '@/lib/backend/simpleCache';
 
 export interface AgricultureSummary {
   totalAreaAcres: number; // Total area in acres
@@ -29,7 +30,14 @@ export const agricultureController = {
           lastUpdated: Timestamp.now(),
         }));
 
-        await agricultureRepo.saveBatch(zonesToSave);
+        // Save cache in background to avoid blocking requests when Firestore credentials are missing
+        (async () => {
+          try {
+            await agricultureRepo.saveBatch(zonesToSave);
+          } catch (err) {
+            console.warn('[Agriculture Controller] background saveBatch failed:', err);
+          }
+        })();
 
         if (process.env.NODE_ENV === 'development') {
           console.log(`[Agriculture Controller] Fetched ${apiZones.length} zones from NASA POWER API`);
@@ -68,77 +76,88 @@ export const agricultureController = {
    * Uses cached summary (6-hour TTL) for consistency and instant loading
    */
   async getAgricultureSummary(): Promise<AgricultureSummary> {
+    // Use in-memory cache with 1 hour TTL to avoid recomputing per-request
     try {
-      // 1. Try to get cached summary first (6-hour TTL)
-      const cached = await impactAgricultureRepo.getCached();
-      
-      if (cached) {
-        // Cache hit - return immediately for instant loading
-        return {
-          ...cached.summary,
-          lastUpdated: cached.lastUpdated.toDate().toISOString(),
-          cacheAgeHours: cached.cacheAgeHours,
-        };
-      }
+      const ttlMs = 60 * 60_000; // 1 hour
 
-      // 2. Cache miss or expired - compute fresh summary
-      if (process.env.NODE_ENV === 'development') {
-        console.log('[Agriculture Controller] Cache miss - computing fresh summary');
-      }
+      const summary = await fetchWithBackgroundRefresh<AgricultureSummary | null>(
+        'impact.agriculture_summary',
+        ttlMs,
+        async () => {
+          // Compute fresh summary
+          if (process.env.NODE_ENV === 'development') {
+            console.log('[Agriculture Controller] Computing fresh agriculture summary');
+          }
 
-      const zones = await agricultureController.getAgricultureZones();
+          const zones = await agricultureController.getAgricultureZones();
 
-      if (zones.length === 0) {
-        // Return default fallback values
-        const fallback: AgricultureSummary = {
-          totalAreaAcres: 250_000_000, // 250M acres fallback
+          if (!zones || zones.length === 0) {
+            const fallback: AgricultureSummary = {
+              totalAreaAcres: 250_000_000,
+              avgVegetationHealth: 72,
+              avgSoilMoisture: 65,
+              yieldTrendPercent: 8.5,
+              activeZones: 0,
+            };
+
+            // Persist fallback to durable cache in background
+            (async () => {
+              try {
+                await impactAgricultureRepo.save(fallback);
+              } catch (err) {
+                console.warn('[Agriculture Controller] background impact save failed:', err);
+              }
+            })();
+
+            return fallback;
+          }
+
+          const totalAreaHectares = zones.reduce((sum, z) => sum + z.area_hectares, 0);
+          const totalAreaAcres = totalAreaHectares * 2.47105;
+
+          const avgVegetationHealth = zones.reduce((sum, z) => sum + z.vegetation_health, 0) / zones.length;
+          const avgSoilMoisture = zones.reduce((sum, z) => sum + z.soil_moisture, 0) / zones.length;
+          const avgYieldTrend = zones.reduce((sum, z) => sum + z.yield_trend, 0) / zones.length;
+
+          const computed: AgricultureSummary = {
+            totalAreaAcres: Math.round(totalAreaAcres),
+            avgVegetationHealth: Math.round(avgVegetationHealth),
+            avgSoilMoisture: Math.round(avgSoilMoisture),
+            yieldTrendPercent: Math.round(avgYieldTrend * 10) / 10,
+            activeZones: zones.length,
+          };
+
+          // Persist durable cache in background (non-blocking)
+          (async () => {
+            try {
+              await impactAgricultureRepo.save(computed);
+            } catch (err) {
+              console.warn('[Agriculture Controller] background impact save failed:', err);
+            }
+          })();
+
+          return computed;
+        }
+      );
+
+      if (summary === null) {
+        // As a safety, try to return durable cache
+        const cached = await impactAgricultureRepo.getCached();
+        return cached?.summary || {
+          totalAreaAcres: 250_000_000,
           avgVegetationHealth: 72,
           avgSoilMoisture: 65,
           yieldTrendPercent: 8.5,
           activeZones: 0,
         };
-
-        // Save fallback to cache to prevent repeated failures
-        await impactAgricultureRepo.save(fallback);
-        return fallback;
       }
-
-      // Calculate aggregates
-      const totalAreaHectares = zones.reduce((sum, z) => sum + z.area_hectares, 0);
-      const totalAreaAcres = totalAreaHectares * 2.47105; // Convert hectares to acres
-
-      const avgVegetationHealth =
-        zones.reduce((sum, z) => sum + z.vegetation_health, 0) / zones.length;
-
-      const avgSoilMoisture =
-        zones.reduce((sum, z) => sum + z.soil_moisture, 0) / zones.length;
-
-      const avgYieldTrend =
-        zones.reduce((sum, z) => sum + z.yield_trend, 0) / zones.length;
-
-      const summary: AgricultureSummary = {
-        totalAreaAcres: Math.round(totalAreaAcres),
-        avgVegetationHealth: Math.round(avgVegetationHealth),
-        avgSoilMoisture: Math.round(avgSoilMoisture),
-        yieldTrendPercent: Math.round(avgYieldTrend * 10) / 10, // 1 decimal place
-        activeZones: zones.length,
-      };
-
-      // 3. Save to cache for future requests
-      await impactAgricultureRepo.save(summary);
 
       return summary;
     } catch (error) {
       console.error('[Agriculture Controller] Error computing summary:', error);
-      
-      // Try to return stale cache as last resort
+      // Fallback to durable cache
       const cached = await impactAgricultureRepo.getCached();
-      if (cached) {
-        console.warn('[Agriculture Controller] Using stale cache due to error');
-        return cached.summary;
-      }
-
-      // Final fallback
+      if (cached) return cached.summary;
       return {
         totalAreaAcres: 250_000_000,
         avgVegetationHealth: 72,

@@ -46,19 +46,24 @@ export const agricultureService = {
    */
   async fetchAgricultureData(): Promise<AgricultureZone[]> {
     try {
-      // Fetch data for each zone
-      const zones = await Promise.all(
-        AGRICULTURE_ZONES.map(async (zone) => {
-          try {
-            const apiData = await this.fetchNASAPowerData(zone.lat, zone.lng);
-            return this.deriveAgricultureMetrics(zone, apiData);
-          } catch (error) {
-            console.warn(`Failed to fetch data for ${zone.name}, using fallback`);
-            return this.generateFallbackData(zone);
-          }
-        })
-      );
+      // Build tasks to fetch each zone; use limited concurrency to avoid many parallel calls
+      const { runWithConcurrency } = await import('@/lib/backend/promisePool');
 
+      const tasks = AGRICULTURE_ZONES.map((zone) => async () => {
+        try {
+          const apiData = await this.fetchNASAPowerData(zone.lat, zone.lng);
+          return this.deriveAgricultureMetrics(zone, apiData);
+        } catch (error) {
+          console.warn(`Failed to fetch data for ${zone.name}, using fallback`);
+          return this.generateFallbackData(zone);
+        }
+      });
+
+      // Limit concurrency to 3 by default to avoid overloading NASA POWER
+      const rawResults = await runWithConcurrency(tasks, 3);
+
+      // Filter out any nulls and return
+      const zones: AgricultureZone[] = rawResults.map(r => r ?? null).filter(Boolean) as AgricultureZone[];
       return zones;
     } catch (error) {
       console.error('Error fetching agriculture data:', error);
@@ -89,16 +94,16 @@ export const agricultureService = {
     const url = `https://power.larc.nasa.gov/api/temporal/daily/point?parameters=PRECTOTCORR,T2M,T2M_MAX,T2M_MIN&community=AG&longitude=${lng}&latitude=${lat}&start=${start}&end=${end}&format=JSON`;
 
     try {
-      const response = await fetch(url, {
+      const data = await (await import('@/lib/backend/fetchWithRetry')).fetchWithRetry<{ properties?: any }>(url, {
         headers: { 'Accept': 'application/json' },
-        next: { revalidate: 3600 }, // Cache for 1 hour
+        timeoutMs: 5000,
+        retries: 2,
+        metricName: 'nasaPower',
+        // keep Next.js cache hint if runtime supports it
+        // @ts-ignore-next-line
+        next: { revalidate: 3600 }
       });
 
-      if (!response.ok) {
-        throw new Error(`NASA POWER API error: ${response.status}`);
-      }
-
-      const data = await response.json();
       return data.properties || null;
     } catch (error) {
       console.error('NASA POWER API fetch failed:', error);

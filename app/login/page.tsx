@@ -18,6 +18,15 @@ export default function LoginPage() {
     const [name, setName] = useState('');
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const [redirecting, setRedirecting] = useState(false);
+    const { user } = useAuth();
+
+    // If auth becomes available, redirect immediately
+    useEffect(() => {
+        if (user) {
+            router.replace('/');
+        }
+    }, [user, router]);
 
     // Prefetch portions of the app for faster transitions
     useEffect(() => {
@@ -35,8 +44,16 @@ export default function LoginPage() {
             } else {
                 await signUp(email, password, name);
             }
-            // Redirect to landing page after successful login
-            router.replace('/');
+            // Immediately indicate redirect and navigate to landing page
+            setRedirecting(true);
+            // Try optimistic navigation if available to avoid waiting for server-rendered data
+            try {
+                // `forceOptimisticNavigation` is supported in newer Next.js versions
+                // Use a typed cast to avoid TS complaints in older versions
+                (router as any).replace('/', { forceOptimisticNavigation: true });
+            } catch (e) {
+                router.replace('/');
+            }
         } catch (err: any) {
             setError(err.message.replace('Firebase: ', ''));
         } finally {
@@ -46,6 +63,15 @@ export default function LoginPage() {
 
     return (
         <div className="min-h-screen bg-space-black flex items-center justify-center p-4 relative overflow-hidden">
+            {/* Quick overlay shown when redirecting to give instant feedback */}
+            {redirecting && (
+                <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/60">
+                    <div className="text-center text-white">
+                        <div className="mx-auto mb-4 w-10 h-10 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        <div className="font-semibold">Signing you in…</div>
+                    </div>
+                </div>
+            )}
             {/* Background Animation */}
             {/* Background Animation */}
             <div className="absolute inset-0 z-0">

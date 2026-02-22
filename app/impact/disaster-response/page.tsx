@@ -10,7 +10,9 @@ export default async function DisasterResponsePage() {
   // Serialization for Client Component
   const serializedEvents = events.map(e => ({
     ...e,
-    lastUpdated: e.lastUpdated.toDate().toISOString(),
+    lastUpdated: (e.lastUpdated && typeof (e.lastUpdated as any).toDate === 'function')
+      ? (e.lastUpdated as any).toDate().toISOString()
+      : e.lastUpdated || new Date().toISOString(),
     // ensure coords are array for client map logic if normalized differently previously
     // Interface says coordinates: { lat, lng }[]
   }));

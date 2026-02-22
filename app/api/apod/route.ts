@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getApod } from '@/lib/backend';
 
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
+// Cache for 24 hours - APOD data doesn't change frequently
+export const revalidate = 86400;
 
 export async function GET() {
   try {

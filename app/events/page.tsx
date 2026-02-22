@@ -1,4 +1,9 @@
-import { EventGrid } from '@/components/events/EventGrid';
+import dynamicLib from 'next/dynamic';
+
+const EventGrid = dynamicLib(() => import('@/components/events/EventGrid').then((m) => m.EventGrid), {
+    ssr: false,
+    loading: () => null,
+});
 import {
     fetchAsteroids,
     fetchAuroraEvents,

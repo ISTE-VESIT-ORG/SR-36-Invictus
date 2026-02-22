@@ -26,33 +26,46 @@ export default function HeroCanvasAnimation() {
 
     const frameIndex = useTransform(smoothProgress, [0, 1], [0, TOTAL_FRAMES - 1]);
 
-    // Preload frames
+    // Lazy-load frames on-demand instead of preloading all 120
     useEffect(() => {
-        const loadImages = async () => {
-            const imagePromises = Array.from({ length: TOTAL_FRAMES }, (_, i) => {
-                return new Promise<HTMLImageElement>((resolve, reject) => {
+        // Load only initial frames (first 20), rest load on-demand
+        const loadInitialFrames = async () => {
+            const initialBatch = Array.from({ length: Math.min(20, TOTAL_FRAMES) }, (_, i) => {
+                return new Promise<HTMLImageElement>((resolve) => {
                     const img = new Image();
                     img.src = `${FRAME_PATH}/frame_${i}.webp`;
                     img.onload = () => {
-                        setLoadProgress((prev) => prev + (100 / TOTAL_FRAMES));
+                        setLoadProgress((prev) => Math.min(prev + (100 / 20), 100));
                         resolve(img);
                     };
                     img.onerror = () => {
-                        // Fallback to placeholder if frame doesn't exist
                         const placeholderImg = new Image();
-                        placeholderImg.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080"%3E%3Crect width="1920" height="1080" fill="%230A0E27"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" fill="%23F8FAFC" font-size="24"%3EFrame ' + i + '%3C/text%3E%3C/svg%3E';
+                        placeholderImg.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080"%3E%3Crect width="1920" height="1080" fill="%230A0E27"/%3E%3C/svg%3E';
                         placeholderImg.onload = () => {
-                            setLoadProgress((prev) => prev + (100 / TOTAL_FRAMES));
+                            setLoadProgress((prev) => Math.min(prev + (100 / 20), 100));
                             resolve(placeholderImg);
                         };
                     };
                 });
             });
-            const loadedImages = await Promise.all(imagePromises);
-            setImages(loadedImages);
+            const loadedInitial = await Promise.all(initialBatch);
+            setImages(loadedInitial);
             setImagesLoaded(true);
+            
+            // Load remaining frames in background
+            for (let i = 20; i < TOTAL_FRAMES; i++) {
+                const img = new Image();
+                img.src = `${FRAME_PATH}/frame_${i}.webp`;
+                img.onload = () => {
+                    setImages((prev) => {
+                        const updated = [...prev];
+                        updated[i] = img;
+                        return updated;
+                    });
+                };
+            }
         };
-        loadImages();
+        loadInitialFrames();
     }, []);
 
     // Render canvas
